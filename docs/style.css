@@ -1,0 +1,184 @@
+:root {
+    --container-width: 480px;
+    --item-width: calc(var(--container-width) / 4 + 10px);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: var(--container-width);
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.add-invest-form {
+    margin-bottom: 20px;
+}
+
+.add-invest-form .money-row {
+    display: flex;
+}
+
+.add-invest-form .money-row input {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: none;
+    background-color: #333;
+    color: #fff;
+}
+
+.add-invest-form .money-row #add-invest-money {
+    width: 70%;
+}
+
+.add-invest-form .money-row #add-invest-income-ratio {
+    width: calc(30% - 5px);
+    margin-left: 5px;
+}
+
+.add-invest-form .date-row #add-invest-date {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: none;
+    background-color: #333;
+    color: #fff;
+}
+
+.add-invest-form .button-row button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.add-invest-form .button-row button:hover {
+    background-color: #45a049;
+}
+
+.add-invest-form .button-row #invest-export,
+.add-invest-form .button-row #invest-import {
+    background-color: #AF4C50;
+    float: right;
+    margin-left: 5px;
+}
+
+.data-filter {
+    clear: both;
+    overflow: auto;
+}
+
+.data-filter .filter-item {
+    margin-right: 15px;
+    float: left;
+}
+
+.data-filter .filter-item > label {
+    margin-left: 3px;
+}
+
+.data-list {
+    display: table;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.data-list .cur-date-item {
+    height: 1px;
+    background-color: #AF4C50;
+}
+
+.data-list .data-item {
+    display: table-row;
+    width: 100%;
+    background-color: #333;
+}
+
+.data-list .data-item.odd {
+    background-color: #444;
+}
+
+.data-list .data-item.closed {
+    color: #AF4C50;
+}
+
+.data-list .data-item > div {
+    display: table-cell;
+    padding: 5px;
+    width: var(--item-width);
+}
+
+.data-list .data-item.invest-item {
+    font-weight: bold;
+}
+
+.data-list .data-item .item-money {
+    width: calc(var(--item-width) + 50px);
+}
+
+.data-list .data-item .item-actions {
+    width: calc(var(--item-width) - 50px);
+    text-align: center;
+}
+
+.data-list .data-item.invest-item {
+    border-top: 1px solid black;
+}
+
+.data-list .data-item.payment-item.payed {
+    color: #AF4C50;
+}
+
+.data-list .data-item.payment-item.debt > .item-money {
+    color: red;
+}
+
+.data-list .invest-close-button {
+    padding: 1px;
+    background-color: #AF4C50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.data-list .payment-close-button {
+    padding: 1px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+#chart-container {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    border: 1px solid white;
+    background-color: #000;
+    display: none;
+}
+
+#close-chart {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 5px;
+    cursor: pointer;
+}

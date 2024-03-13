@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Money</title>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="style.css"/>
+	<link rel="icon" href="favicon.ico"/>
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/hammerjs"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+	<script defer type="text/javascript" src="app.js"></script>
+</head>
+<body>
+	<div id="chart-container">
+		<button id="close-chart">X</button>
+	</div>
+	<div class="container" id="container">
+		<h1>Money</h1>
+
+		<form class="add-invest-form" id="add-invest-form">
+			<div class="money-row">
+				<input type="text" placeholder="Enter the money to invest" id="add-invest-money">
+				<input type="text" placeholder="Invest ratio" id="add-invest-income-ratio" value="0.05">
+			</div>
+			<div class="date-row">
+				<input type="date" placeholder="Investment date" id="add-invest-date">
+			</div>
+			<div class="button-row">
+				<button type="submit" id="add-invest-submit">Add</button>
+				<button type="button" id="show-chart">Chart</button>
+				<button type="button" id="invest-export">Export</button>
+				<button type="button" id="invest-import">Import</button>
+			</div>
+		</form>
+
+		<div class="data-filter">
+			<div class="filter-item">
+				<input type="checkbox" id="filter-show-all"><label for="filter-show-all">Show closed</label>
+			</div>
+			<div class="filter-item">
+				<input type="checkbox" id="filter-show-payed"><label for="filter-show-payed">Show payed</label>
+			</div>
+		</div>
+
+		<div class="data-list">
+			<div class="data-list-header">
+				<div class="data-item">
+					<div class="item-date">Created</div>
+					<div class="item-date">Closed/Paydate</div>
+					<div class="item-money">Money</div>
+					<div class="item-actions">Actions</div>
+				</div>
+			</div>
+			<div id="data-list"></div>
+		</div>
+	</div>
+</body>
+</html>
