@@ -206,6 +206,8 @@ async function updatePayments(): Promise<void> {
 
         if (invest.isActive) {
             totalInvestedMoney += invest.money;
+
+            totalIncomeMoney += invest.money * (invest.incomeRatio || defaultIncomeRatio);
         }
 
         if (!curDateLineDrawn && today.getDate() < invest.createdDate.getDate()) {
@@ -218,8 +220,6 @@ async function updatePayments(): Promise<void> {
 
         let payments = await dbGetPayments({id: invest.id});
         for (let payment of payments) {
-            totalIncomeMoney += payment.money;
-
             let isDebt = false;
             if (!filterShowPayed && payment.isPayed) {
                 continue;
@@ -241,7 +241,7 @@ async function updatePayments(): Promise<void> {
     let totalItem = renderTotalItem(total);
     dataListElem.appendChild(totalItem);
 
-    let totalIncome: TotalItem = {title: 'Income', money: totalIncomeMoney};
+    let totalIncome: TotalItem = {title: 'Current income', money: totalIncomeMoney};
     let totalIncomeItem = renderTotalItem(totalIncome);
     dataListElem.appendChild(totalIncomeItem);
 

@@ -331,6 +331,7 @@ function updatePayments() {
             i++;
             if (invest.isActive) {
                 totalInvestedMoney += invest.money;
+                totalIncomeMoney += invest.money * (invest.incomeRatio || defaultIncomeRatio);
             }
             if (!curDateLineDrawn && today.getDate() < invest.createdDate.getDate()) {
                 curDateLineDrawn = true;
@@ -340,7 +341,6 @@ function updatePayments() {
             dataListElem.appendChild(investItem);
             let payments = yield dbGetPayments({ id: invest.id });
             for (let payment of payments) {
-                totalIncomeMoney += payment.money;
                 let isDebt = false;
                 if (!filterShowPayed && payment.isPayed) {
                     continue;
@@ -359,7 +359,7 @@ function updatePayments() {
         let total = { title: 'Current invest', money: totalInvestedMoney };
         let totalItem = renderTotalItem(total);
         dataListElem.appendChild(totalItem);
-        let totalIncome = { title: 'Income', money: totalIncomeMoney };
+        let totalIncome = { title: 'Current income', money: totalIncomeMoney };
         let totalIncomeItem = renderTotalItem(totalIncome);
         dataListElem.appendChild(totalIncomeItem);
         if (totalDebtMoney > 0) {

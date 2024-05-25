@@ -1,5 +1,5 @@
 :root {
-    --container-width: 480px;
+    --container-width: 600px;
     --item-width: calc(var(--container-width) / 4 + 10px);
 }
 
