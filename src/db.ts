@@ -96,6 +96,9 @@ async function dbCalculatePayments(): Promise<void> {
         }
 
         lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 1);
+        lastPaymentDate.setHours(0);
+        lastPaymentDate.setMinutes(0);
+        lastPaymentDate.setSeconds(0);
 
         await dbAddPayment(invest.id!, invest.money, invest.incomeRatio || defaultIncomeRatio, lastPaymentDate);
     }
