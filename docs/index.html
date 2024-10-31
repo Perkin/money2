@@ -57,5 +57,51 @@
 			<div id="data-list"></div>
 		</div>
 	</div>
+
+	<!-- Firebase App SDK -->
+	<script type="module">
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+		import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
+
+		// Ваши настройки Firebase
+		const firebaseConfig = {
+			apiKey: "AIzaSyChibkvDRX-jFeAwM83yNniWzCh1Et4fGg",
+			authDomain: "money-credit-js.firebaseapp.com",
+			projectId: "money-credit-js",
+			storageBucket: "money-credit-js.appspot.com",
+			messagingSenderId: "439781336506",
+			appId: "1:439781336506:web:a3c98594b6a6f4d5df2983"
+		};
+
+		// Инициализируем Firebase
+		const app = initializeApp(firebaseConfig);
+
+		// Инициализируем Firebase Messaging
+		const messaging = getMessaging(app);
+
+		// Запрашиваем разрешение и получаем токен
+		async function requestPermissionAndGetToken() {
+			try {
+				const permission = await Notification.requestPermission();
+				if (permission === "granted") {
+					const token = await getToken(messaging, { vapidKey: "BCbgZOBpE57e2HV9mgzzP0QYbDwxWIX2cFgNiKOGslshs2KM0wYXDSTsc6ew7dXDHAqVt9V6WMnb2YicEnoK_vo" }); // Добавьте ключ VAPID
+					console.log('FCM Token:', token);
+					// Сохраните или используйте токен для отправки уведомлений
+				} else {
+					console.error("Разрешение на отправку уведомлений отклонено");
+				}
+			} catch (error) {
+				console.error("Ошибка получения токена:", error);
+			}
+		}
+
+		requestPermissionAndGetToken();
+
+		// Обработка входящих уведомлений, когда приложение открыто
+		onMessage(messaging, (payload) => {
+			console.log('Сообщение получено при открытом приложении:', payload);
+			alert(`Новое уведомление: ${payload.notification.title}`);
+		});
+	</script>
 </body>
 </html>
