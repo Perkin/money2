@@ -1,6 +1,6 @@
 // Используем importScripts для загрузки Firebase в Service Worker
-importScripts('https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js');
+importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging.js');
 
 // Firebase конфигурация
 const firebaseConfig = {
