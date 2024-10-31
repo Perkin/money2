@@ -60,6 +60,16 @@
 
 	<!-- Firebase App SDK -->
 	<script type="module">
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/firebase-messaging-sw.js')
+				.then((registration) => {
+					console.log('Service Worker зарегистрирован:', registration);
+				})
+				.catch((error) => {
+					console.log('Ошибка регистрации Service Worker:', error);
+				});
+		}
+
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 		import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
 
