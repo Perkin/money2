@@ -60,20 +60,9 @@
 
 	<!-- Firebase App SDK -->
 	<script type="module">
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('/money2/firebase-messaging-sw.js')
-				.then((registration) => {
-					console.log('Service Worker зарегистрирован:', registration);
-				})
-				.catch((error) => {
-					console.log('Ошибка регистрации Service Worker:', error);
-				});
-		}
-
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-		import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
+		import { getMessaging } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
 
-		// Ваши настройки Firebase
 		const firebaseConfig = {
 			apiKey: "AIzaSyChibkvDRX-jFeAwM83yNniWzCh1Et4fGg",
 			authDomain: "money-credit-js.firebaseapp.com",
@@ -83,11 +72,19 @@
 			appId: "1:439781336506:web:a3c98594b6a6f4d5df2983"
 		};
 
-		// Инициализируем Firebase
 		const app = initializeApp(firebaseConfig);
-
-		// Инициализируем Firebase Messaging
 		const messaging = getMessaging(app);
+
+		// Регистрация кастомного Service Worker по пути /money2/firebase-messaging-sw.js
+		navigator.serviceWorker.register('/money2/firebase-messaging-sw.js')
+			.then((registration) => {
+				messaging.useServiceWorker(registration);
+				console.log('Service Worker зарегистрирован:', registration.scope);
+			})
+			.catch((error) => {
+				console.error('Ошибка регистрации Service Worker:', error);
+			});
+
 
 		// Запрашиваем разрешение и получаем токен
 		async function requestPermissionAndGetToken() {

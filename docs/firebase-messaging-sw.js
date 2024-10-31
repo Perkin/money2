@@ -1,6 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getMessaging, onBackgroundMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging-sw.js";
+// Используем importScripts для загрузки Firebase в Service Worker
+importScripts('https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js');
 
+// Firebase конфигурация
 const firebaseConfig = {
     apiKey: "AIzaSyChibkvDRX-jFeAwM83yNniWzCh1Et4fGg",
     authDomain: "money-credit-js.firebaseapp.com",
@@ -10,14 +12,20 @@ const firebaseConfig = {
     appId: "1:439781336506:web:a3c98594b6a6f4d5df2983"
 };
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+// Инициализация Firebase
+firebase.initializeApp(firebaseConfig);
+
+// Инициализация Firebase Messaging
+const messaging = firebase.messaging();
 
 // Обработка фонового уведомления
-onBackgroundMessage(messaging, (payload) => {
+messaging.onBackgroundMessage((payload) => {
     console.log('Фоновое сообщение получено:', payload);
-    self.registration.showNotification(payload.notification.title, {
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
         body: payload.notification.body,
         icon: payload.notification.icon
-    });
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
