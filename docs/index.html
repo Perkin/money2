@@ -57,58 +57,5 @@
 			<div id="data-list"></div>
 		</div>
 	</div>
-
-	<!-- Firebase App SDK -->
-	<script type="module">
-		import { initializeApp } from "/money2/firebase-app.js";
-		import { getMessaging, onMessage, getToken  } from "/money2/firebase-messaging.js";
-
-		const firebaseConfig = {
-			apiKey: "AIzaSyChibkvDRX-jFeAwM83yNniWzCh1Et4fGg",
-			authDomain: "money-credit-js.firebaseapp.com",
-			projectId: "money-credit-js",
-			storageBucket: "money-credit-js.appspot.com",
-			messagingSenderId: "439781336506",
-			appId: "1:439781336506:web:a3c98594b6a6f4d5df2983"
-		};
-
-		const app = initializeApp(firebaseConfig);
-
-		if ('serviceWorker' in navigator) {
-			// Регистрация кастомного Service Worker по пути /money2/firebase-messaging-sw.js
-			navigator.serviceWorker.register('/money2/firebase-messaging-sw.js')
-				.then((registration) => {
-					const messaging = getMessaging(app);
-					messaging.useServiceWorker(registration);
-					console.log('Service Worker зарегистрирован:', registration.scope);
-					// Запрашиваем разрешение на уведомления и получаем токен
-					requestPermissionAndGetToken(messaging);
-				})
-				.catch((error) => {
-					console.error('Ошибка регистрации Service Worker:', error);
-				});
-		} else {
-			console.warn('Service Worker не поддерживается в этом браузере.');
-		}
-
-		async function requestPermissionAndGetToken(messaging) {
-			try {
-				const currentToken = await getToken(messaging, { vapidKey: 'BCbgZOBpE57e2HV9mgzzP0QYbDwxWIX2cFgNiKOGslshs2KM0wYXDSTsc6ew7dXDHAqVt9V6WMnb2YicEnoK_vo' });
-				if (currentToken) {
-					console.log('Токен получен:', currentToken);
-				} else {
-					console.warn('Не удалось получить токен.');
-				}
-			} catch (error) {
-				console.error('Ошибка получения токена:', error);
-			}
-		}
-
-		// Обработка входящих уведомлений, когда приложение открыто
-		onMessage(messaging, (payload) => {
-			console.log('Сообщение получено при открытом приложении:', payload);
-			alert(`Новое уведомление: ${payload.notification.title}`);
-		});
-	</script>
 </body>
 </html>
