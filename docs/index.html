@@ -80,6 +80,8 @@
 			.then((registration) => {
 				messaging.useServiceWorker(registration);
 				console.log('Service Worker зарегистрирован:', registration.scope);
+				// Запрашиваем разрешение на уведомления и получаем токен
+				requestPermissionAndGetToken();
 			})
 			.catch((error) => {
 				console.error('Ошибка регистрации Service Worker:', error);
@@ -101,8 +103,6 @@
 				console.error("Ошибка получения токена:", error);
 			}
 		}
-
-		requestPermissionAndGetToken();
 
 		// Обработка входящих уведомлений, когда приложение открыто
 		onMessage(messaging, (payload) => {
