@@ -6,7 +6,8 @@ interface Invest {
     incomeRatio: number,
     createdDate: Date,
     closedDate: Date | null,
-    isActive: 1 | 0
+    isActive: 1 | 0,
+    updatedAt: Date
 }
 
 interface Payment {
@@ -14,7 +15,8 @@ interface Payment {
     investId: number,
     money: number,
     paymentDate: Date,
-    isPayed: 1 | 0
+    isPayed: 1 | 0,
+    updatedAt: Date
 }
 
 type InvestFilter = {
@@ -26,6 +28,43 @@ type PaymentFilter = {
 }
 
 type dbResult = number | string | undefined;
+
+function dbUpgrade(event: IDBVersionChangeEvent): void {
+    const db = (event.target as IDBOpenDBRequest).result;
+
+    // Текущая транзакция обновления
+    const transaction = openRequest.transaction;
+    if (!transaction) {
+        console.error("Transaction is null during onupgradeneeded.");
+        return;
+    }
+
+    // Invests db
+    let invests;
+    if (!db.objectStoreNames.contains('invests')) {
+        invests = db.createObjectStore('invests', {keyPath: 'id', autoIncrement: true});
+        invests.createIndex('isActiveIdx', 'isActive', {unique: false});
+    } else {
+        invests = transaction.objectStore("invests");
+    }
+
+    if (!invests.indexNames.contains('updatedAtIdx')) {
+        invests.createIndex('updatedAtIdx', 'updatedAt', { unique: false });
+    }
+
+    // Payments db
+    let payments;
+    if (!db.objectStoreNames.contains('payments')) {
+        payments = db.createObjectStore('payments', {keyPath: 'id', autoIncrement: true});
+        payments.createIndex('investIdIdx', 'investId', {unique: false});
+    } else {
+        payments = transaction.objectStore("payments");
+    }
+
+    if (!payments.indexNames.contains('updatedAtIdx')) {
+        payments.createIndex('updatedAtIdx', 'updatedAt', { unique: false });
+    }
+}
 
 async function dbGetInvestById(investId: number): Promise<Invest> {
     let transaction = db.transaction("invests");
@@ -58,6 +97,7 @@ async function dbAddInvest(money: number, incomeRatio: number, createdDate: Date
         createdDate: createdDate,
         closedDate: null,
         isActive: 1,
+        updatedAt: createdDate
     };
 
     return dbDoAsync(() => invests.add(invest));
@@ -67,6 +107,7 @@ async function dbCloseInvest(investId: number): Promise<dbResult> {
     let invest = await dbGetInvestById(investId);
     invest.isActive = 0;
     invest.closedDate = new Date();
+    invest.updatedAt = invest.closedDate;
 
     let transaction = db.transaction("invests", "readwrite");
     let invests = transaction.objectStore("invests");
@@ -126,6 +167,7 @@ async function dbAddPayment(investId: number, investMoney: number, incomeRatio: 
         money: Math.round(investMoney * incomeRatio),
         paymentDate: paymentDate,
         isPayed: 0,
+        updatedAt: new Date()
     }
 
     return dbDoAsync(() => payments.add(payment));
@@ -134,6 +176,7 @@ async function dbAddPayment(investId: number, investMoney: number, incomeRatio: 
 async function dbClosePayment(paymentId: number): Promise<dbResult> {
     let payment = await dbGetPaymentById(paymentId);
     payment.isPayed = 1;
+    payment.updatedAt = new Date();
 
     let transaction = db.transaction("payments", "readwrite");
     let payments = transaction.objectStore("payments");
@@ -158,6 +201,7 @@ async function dbImportData(importData: any): Promise<void> {
     // Export converts date to string, so we should cast them back to Date
     for (const invest of importData.invests) {
         invest.createdDate = new Date(Date.parse(invest.createdDate));
+        invest.updatedAt = new Date(Date.parse(invest.updatedAt));
         if (!invest.isActive && invest.closedDate) {
             invest.closedDate = new Date(Date.parse(invest.closedDate));
         }
@@ -169,6 +213,7 @@ async function dbImportData(importData: any): Promise<void> {
 
     for (const payment of importData.payments) {
         payment.paymentDate = new Date(Date.parse(payment.paymentDate));
+        payment.updatedAt = new Date(Date.parse(payment.updatedAt));
         await dbDoAsync(() => payments.put(payment));
     }
 }

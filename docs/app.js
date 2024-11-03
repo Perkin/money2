@@ -9,6 +9,39 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const defaultIncomeRatio = 0.05;
+function dbUpgrade(event) {
+    const db = event.target.result;
+    // Текущая транзакция обновления
+    const transaction = openRequest.transaction;
+    if (!transaction) {
+        console.error("Transaction is null during onupgradeneeded.");
+        return;
+    }
+    // Invests db
+    let invests;
+    if (!db.objectStoreNames.contains('invests')) {
+        invests = db.createObjectStore('invests', { keyPath: 'id', autoIncrement: true });
+        invests.createIndex('isActiveIdx', 'isActive', { unique: false });
+    }
+    else {
+        invests = transaction.objectStore("invests");
+    }
+    if (!invests.indexNames.contains('updatedAtIdx')) {
+        invests.createIndex('updatedAtIdx', 'updatedAt', { unique: false });
+    }
+    // Payments db
+    let payments;
+    if (!db.objectStoreNames.contains('payments')) {
+        payments = db.createObjectStore('payments', { keyPath: 'id', autoIncrement: true });
+        payments.createIndex('investIdIdx', 'investId', { unique: false });
+    }
+    else {
+        payments = transaction.objectStore("payments");
+    }
+    if (!payments.indexNames.contains('updatedAtIdx')) {
+        payments.createIndex('updatedAtIdx', 'updatedAt', { unique: false });
+    }
+}
 function dbGetInvestById(investId) {
     return __awaiter(this, void 0, void 0, function* () {
         let transaction = db.transaction("invests");
@@ -40,6 +73,7 @@ function dbAddInvest(money, incomeRatio, createdDate) {
             createdDate: createdDate,
             closedDate: null,
             isActive: 1,
+            updatedAt: createdDate
         };
         return dbDoAsync(() => invests.add(invest));
     });
@@ -49,6 +83,7 @@ function dbCloseInvest(investId) {
         let invest = yield dbGetInvestById(investId);
         invest.isActive = 0;
         invest.closedDate = new Date();
+        invest.updatedAt = invest.closedDate;
         let transaction = db.transaction("invests", "readwrite");
         let invests = transaction.objectStore("invests");
         return dbDoAsync(() => invests.put(invest));
@@ -102,6 +137,7 @@ function dbAddPayment(investId, investMoney, incomeRatio, paymentDate) {
             money: Math.round(investMoney * incomeRatio),
             paymentDate: paymentDate,
             isPayed: 0,
+            updatedAt: new Date()
         };
         return dbDoAsync(() => payments.add(payment));
     });
@@ -110,6 +146,7 @@ function dbClosePayment(paymentId) {
     return __awaiter(this, void 0, void 0, function* () {
         let payment = yield dbGetPaymentById(paymentId);
         payment.isPayed = 1;
+        payment.updatedAt = new Date();
         let transaction = db.transaction("payments", "readwrite");
         let payments = transaction.objectStore("payments");
         return dbDoAsync(() => payments.put(payment));
@@ -131,6 +168,7 @@ function dbImportData(importData) {
         // Export converts date to string, so we should cast them back to Date
         for (const invest of importData.invests) {
             invest.createdDate = new Date(Date.parse(invest.createdDate));
+            invest.updatedAt = new Date(Date.parse(invest.updatedAt));
             if (!invest.isActive && invest.closedDate) {
                 invest.closedDate = new Date(Date.parse(invest.closedDate));
             }
@@ -140,6 +178,7 @@ function dbImportData(importData) {
         yield dbDoAsync(() => payments.clear());
         for (const payment of importData.payments) {
             payment.paymentDate = new Date(Date.parse(payment.paymentDate));
+            payment.updatedAt = new Date(Date.parse(payment.updatedAt));
             yield dbDoAsync(() => payments.put(payment));
         }
     });
@@ -160,7 +199,7 @@ function dbDoAsync(callback) {
     });
 }
 let db;
-let dbVersion = 2;
+let dbVersion = 4;
 //delete db (for testing)
 // let deleteRequest = indexedDB.deleteDatabase('money');
 // deleteRequest.onsuccess = function () {
@@ -170,18 +209,7 @@ let dbVersion = 2;
 let openRequest = indexedDB.open('money', dbVersion);
 openRequest.onupgradeneeded = function (event) {
     db = openRequest.result;
-    switch (event.newVersion) {
-        case 2:
-            if (!db.objectStoreNames.contains('invests')) {
-                const invests = db.createObjectStore('invests', { keyPath: 'id', autoIncrement: true });
-                invests.createIndex('isActiveIdx', 'isActive', { unique: false });
-            }
-            if (!db.objectStoreNames.contains('payments')) {
-                const payments = db.createObjectStore('payments', { keyPath: 'id', autoIncrement: true });
-                payments.createIndex('investIdIdx', 'investId', { unique: false });
-            }
-            break;
-    }
+    dbUpgrade(event);
 };
 openRequest.onerror = function () {
     console.error("Error", openRequest.error);
