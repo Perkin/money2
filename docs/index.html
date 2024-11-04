@@ -17,8 +17,62 @@
 	<div id="chart-container">
 		<button id="close-chart">X</button>
 	</div>
+
+	<div id="register-popup" class="popup-overlay">
+		<div class="popup-content">
+			<span id="close-register-popup" class="popup-close">&times;</span>
+			<h2>Регистрация</h2>
+			<form id="register-form" class="popup-form">
+				<label for="register-username">Логин:</label>
+				<input type="text" id="register-username" name="username" required>
+
+				<label for="register-password">Пароль:</label>
+				<input type="password" id="register-password" name="password" required>
+
+				<label for="register-confirm-password">Подтвердите пароль:</label>
+				<input type="password" id="register-confirm-password" name="confirm-password" required>
+
+				<button type="submit" id="register-button" class="popup-button">
+					Зарегистрироваться
+					<span id="register-spinner" class="spinner"></span>
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<div id="login-popup" class="popup-overlay">
+		<div class="popup-content">
+			<span id="close-login-popup" class="popup-close">&times;</span>
+			<h2>Авторизация</h2>
+			<form id="login-form" class="popup-form">
+				<label for="login-username">Логин:</label>
+				<input type="text" id="login-username" name="username" required>
+
+				<label for="login-password">Пароль:</label>
+				<input type="password" id="login-password" name="password" required>
+
+				<button type="submit" id="login-button" class="popup-button">
+					Авторизоваться
+					<span id="login-spinner" class="spinner"></span>
+				</button>
+			</form>
+		</div>
+	</div>
+
 	<div class="container" id="container">
 		<h1>Money</h1>
+
+		<div class="menu-container">
+			<div id="user"></div>
+			<button class="menu-button" id="menu-button">☰</button>
+			<div class="menu-dropdown-content" id="menu-dropdown-content">
+				<button type="button" id="invest-export">Экспорт</button>
+				<button type="button" id="invest-import">Импорт</button>
+				<button type="button" id="open-register-popup">Регистрация</button>
+				<button type="button" id="open-login-popup">Авторизация</button>
+				<button type="button" id="logout">Выход</button>
+			</div>
+		</div>
 
 		<form class="add-invest-form" id="add-invest-form">
 			<div class="money-row">
@@ -31,8 +85,6 @@
 			<div class="button-row">
 				<button type="submit" id="add-invest-submit">Add</button>
 				<button type="button" id="show-chart">Chart</button>
-				<button type="button" id="invest-export">Export</button>
-				<button type="button" id="invest-import">Import</button>
 			</div>
 		</form>
 

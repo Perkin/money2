@@ -198,6 +198,9 @@ function dbDoAsync(callback) {
         });
     });
 }
+const api_url = 'https://money-7won.onrender.com';
+let authToken;
+let authUser;
 let db;
 let dbVersion = 4;
 //delete db (for testing)
@@ -228,6 +231,10 @@ openRequest.onsuccess = function () {
 };
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+        yield initMenu();
+        yield initRegisterPopup();
+        yield initAuthPopup();
+        yield initAuth();
         try {
             yield dbCalculatePayments();
             yield updatePayments();
@@ -235,6 +242,86 @@ function main() {
         catch (error) {
             console.error('Error occurred:', error);
         }
+    });
+}
+function initMenu() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const menuButton = document.getElementById('menu-button');
+        const dropdownContent = document.getElementById('menu-dropdown-content');
+        menuButton.addEventListener('click', (event) => {
+            dropdownContent.classList.toggle('show');
+            event.stopPropagation();
+        });
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!dropdownContent.contains(target) && target !== menuButton) {
+                dropdownContent.classList.remove('show');
+            }
+        });
+    });
+}
+function initRegisterPopup() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const openPopupButton = document.getElementById('open-register-popup');
+        const closePopupButton = document.getElementById('close-register-popup');
+        const registerPopup = document.getElementById('register-popup');
+        openPopupButton.addEventListener('click', () => {
+            registerPopup.classList.add('show');
+        });
+        closePopupButton.addEventListener('click', () => {
+            registerPopup.classList.remove('show');
+        });
+        document.addEventListener('click', (event) => {
+            if (event.target === registerPopup) {
+                registerPopup.classList.remove('show');
+            }
+        });
+    });
+}
+function initAuthPopup() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const openPopupButton = document.getElementById('open-login-popup');
+        const closePopupButton = document.getElementById('close-login-popup');
+        const loginPopup = document.getElementById('login-popup');
+        openPopupButton.addEventListener('click', () => {
+            loginPopup.classList.add('show');
+        });
+        closePopupButton.addEventListener('click', () => {
+            loginPopup.classList.remove('show');
+        });
+        document.addEventListener('click', (event) => {
+            if (event.target === loginPopup) {
+                loginPopup.classList.remove('show');
+            }
+        });
+    });
+}
+function initAuth() {
+    return __awaiter(this, void 0, void 0, function* () {
+        authToken = getTokenFromCookie();
+        if (!authToken) {
+            return;
+        }
+        authUser = getUser(authToken);
+        document.getElementById('logout').style.display = 'inline-block';
+        document.getElementById('open-login-popup').style.display = 'none';
+        document.getElementById('open-register-popup').style.display = 'none';
+        document.getElementById('user').innerText = authUser;
+    });
+}
+// Функция для выхода
+function logout() {
+    return __awaiter(this, void 0, void 0, function* () {
+        authUser = null;
+        authToken = null;
+        document.getElementById('logout').style.display = 'none';
+        document.getElementById('open-login-popup').style.display = 'inline-block';
+        document.getElementById('open-register-popup').style.display = 'inline-block';
+        document.getElementById('user').innerText = '';
+        document.cookie = 'token=; Max-Age=0; path=/;';
+        const dropdownContent = document.getElementById('menu-dropdown-content');
+        dropdownContent.classList.remove('show');
+        toast("Вы успешно вышли!");
     });
 }
 function showChart() {
@@ -544,6 +631,9 @@ function addInvest(e) {
 }
 function closeInvest() {
     return __awaiter(this, void 0, void 0, function* () {
+        if (!confirm('Точно закрыть?')) {
+            return;
+        }
         let investId = parseInt(this.getAttribute('investId'));
         if (!investId) {
             return;
@@ -618,6 +708,170 @@ function importData() {
         }
     });
 }
+function userRegister(event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        event.preventDefault();
+        const username = document.getElementById("register-username").value.trim();
+        const password = document.getElementById("register-password").value.trim();
+        const confirmPassword = document.getElementById("register-confirm-password").value.trim();
+        if (password !== confirmPassword) {
+            toast("Пароли не совпадают!", true);
+            return;
+        }
+        const button = document.getElementById("register-button");
+        const spinner = document.getElementById("register-spinner");
+        button.disabled = true;
+        spinner.style.display = "block";
+        try {
+            const elements = document.getElementsByClassName('error-item');
+            for (let element of elements) {
+                element.style.display = 'none';
+            }
+            const response = yield fetch(api_url + "/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            });
+            const result = yield response.json();
+            if (result.status == 'success') {
+                if (!result.token) {
+                    toast("Не удалось получить токен", true);
+                    return;
+                }
+                toast("Регистрация успешна!");
+                document.getElementById("register-popup").style.display = "none";
+                setTokenToCookie(result.token);
+                yield initAuth();
+            }
+            else if (result.error) {
+                switch (result.error) {
+                    case 'user_exists':
+                        let errorItem = document.createElement('div');
+                        errorItem.className = 'error-item';
+                        errorItem.innerHTML = 'Пользователь уже существует';
+                        document.getElementById("register-username").after(errorItem);
+                        break;
+                    case 'validation_errors':
+                        let errors = result.errors || {};
+                        for (const key in errors) {
+                            let errorItem = document.createElement('div');
+                            errorItem.className = 'error-item';
+                            errorItem.innerHTML = errors[key];
+                            document.getElementById("register-" + key).after(errorItem);
+                        }
+                        break;
+                }
+            }
+            else {
+                toast("Unknown error: " + JSON.stringify(result), true);
+            }
+        }
+        catch (error) {
+            console.error("Неизвестная ошибка:", error);
+            toast("Неизвестная ошибка", true);
+        }
+        finally {
+            spinner.style.display = "none";
+            button.disabled = false;
+        }
+    });
+}
+function userLogin(event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        event.preventDefault();
+        const username = document.getElementById("login-username").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        const button = document.getElementById("login-button");
+        const spinner = document.getElementById("login-spinner");
+        button.disabled = true;
+        spinner.style.display = "block";
+        try {
+            const elements = document.getElementsByClassName('error-item');
+            for (let element of elements) {
+                element.style.display = 'none';
+            }
+            const response = yield fetch(api_url + "/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            });
+            const result = yield response.json();
+            if (result.status == 'success') {
+                if (!result.token) {
+                    toast("Не удалось получить токен", true);
+                    return;
+                }
+                toast("Авторизация успешна!");
+                document.getElementById("login-popup").style.display = "none";
+                setTokenToCookie(result.token);
+                yield initAuth();
+            }
+            else if (result.error) {
+                switch (result.error) {
+                    case 'invalid_credentials':
+                        let errorItem = document.createElement('div');
+                        errorItem.className = 'error-item';
+                        errorItem.innerHTML = 'Логин или пароль неверны';
+                        document.getElementById("login-password").after(errorItem);
+                        break;
+                    case 'validation_errors':
+                        let errors = result.errors || {};
+                        for (const key in errors) {
+                            let errorItem = document.createElement('div');
+                            errorItem.className = 'error-item';
+                            errorItem.innerHTML = errors[key];
+                            document.getElementById("login-" + key).after(errorItem);
+                        }
+                        break;
+                }
+            }
+            else {
+                toast("Unknown error: " + JSON.stringify(result), true);
+            }
+        }
+        catch (error) {
+            console.error("Неизвестная ошибка:", error);
+            toast("Неизвестная ошибка", true);
+        }
+        finally {
+            spinner.style.display = "none";
+            button.disabled = false;
+        }
+    });
+}
+function setTokenToCookie(token) {
+    const tokenData = parseJWT(token);
+    document.cookie = `token=${token}; max-age=${tokenData.exp}; Secure; SameSite=Strict; path=/`;
+}
+function getTokenFromCookie() {
+    const nameEQ = "token=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ')
+            c = c.substring(1);
+        if (c.indexOf(nameEQ) === 0)
+            return c.substring(nameEQ.length);
+    }
+    return null;
+}
+function getUser(token) {
+    const tokenData = parseJWT(token);
+    return tokenData.username;
+}
+function parseJWT(token) {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        throw new Error('Некорректный токен');
+    }
+    // Декодируем полезную нагрузку (вторая часть токена)
+    const payload = parts[1];
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+}
 function formatDate(date) {
     if (!date) {
         return '&nbsp;';
@@ -663,4 +917,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('close-chart').addEventListener("click", closeChart);
     document.getElementById('invest-export').addEventListener('click', exportData);
     document.getElementById('invest-import').addEventListener('click', importData);
+    document.getElementById('register-form').addEventListener('submit', userRegister);
+    document.getElementById('logout').addEventListener('click', logout);
+    document.getElementById('login-form').addEventListener('submit', userLogin);
 });
