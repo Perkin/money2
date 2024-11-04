@@ -3,7 +3,7 @@
 <head>
 	<title>Money</title>
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="style.css?v=1.1"/>
+	<link rel="stylesheet" href="style.css?v=1.2"/>
 	<link rel="icon" href="favicon.ico"/>
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -11,7 +11,7 @@
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/hammerjs"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-	<script defer type="text/javascript" src="app.js?v=1.1"></script>
+	<script defer type="text/javascript" src="app.js?v=1.2"></script>
 </head>
 <body>
 	<div id="chart-container">
@@ -60,7 +60,7 @@
 	</div>
 
 	<div class="container" id="container">
-		<h1>Money</h1>
+		<h1>Инвестиции</h1>
 
 		<div class="menu-container">
 			<div id="user"></div>
@@ -68,6 +68,7 @@
 			<div class="menu-dropdown-content" id="menu-dropdown-content">
 				<button type="button" id="invest-export">Экспорт</button>
 				<button type="button" id="invest-import">Импорт</button>
+				<button type="button" id="show-chart">График</button>
 				<button type="button" id="open-register-popup">Регистрация</button>
 				<button type="button" id="open-login-popup">Авторизация</button>
 				<button type="button" id="logout">Выход</button>
@@ -76,34 +77,33 @@
 
 		<form class="add-invest-form" id="add-invest-form">
 			<div class="money-row">
-				<input type="text" placeholder="Enter the money to invest" id="add-invest-money">
-				<input type="text" placeholder="Invest ratio" id="add-invest-income-ratio" value="0.05">
+				<input type="text" placeholder="Сколько инвестируем" id="add-invest-money">
+				<input type="text" placeholder="Доля прибыли" id="add-invest-income-ratio" value="0.05">
 			</div>
 			<div class="date-row">
-				<input type="date" placeholder="Investment date" id="add-invest-date">
+				<input type="date" placeholder="Дата инвестиции" id="add-invest-date">
 			</div>
 			<div class="button-row">
-				<button type="submit" id="add-invest-submit">Add</button>
-				<button type="button" id="show-chart">Chart</button>
+				<button type="submit" id="add-invest-submit">Добавить</button>
 			</div>
 		</form>
 
 		<div class="data-filter">
 			<div class="filter-item">
-				<input type="checkbox" id="filter-show-all"><label for="filter-show-all">Show closed</label>
+				<input type="checkbox" id="filter-show-all"><label for="filter-show-all">С закрытыми</label>
 			</div>
 			<div class="filter-item">
-				<input type="checkbox" id="filter-show-payed"><label for="filter-show-payed">Show payed</label>
+				<input type="checkbox" id="filter-show-payed"><label for="filter-show-payed">С оплаченными</label>
 			</div>
 		</div>
 
 		<div class="data-list">
 			<div class="data-list-header">
 				<div class="data-item">
-					<div class="item-date">Created</div>
-					<div class="item-date">Closed/Paydate</div>
-					<div class="item-money">Money</div>
-					<div class="item-actions">Actions</div>
+					<div class="item-date">Создано</div>
+					<div class="item-date">Закрыто/Оплата</div>
+					<div class="item-money">Сумма</div>
+					<div class="item-actions">Действия</div>
 				</div>
 			</div>
 			<div id="data-list"></div>

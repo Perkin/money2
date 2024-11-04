@@ -1,7 +1,7 @@
 declare var Chart: any;
 declare function Toastify(options: any): any;
 
-const api_url: string = 'https://money-7won.onrender.com';
+const api_url: string = 'https://money-7won.onrender.com/api';
 
 let authToken: string | null;
 let authUser: string | null;
@@ -44,13 +44,13 @@ openRequest.onsuccess = function() {
 
     db.onversionchange = function() {
         db.close();
-        alert("Db is outdated, refresh the page");
+        alert("Требуется обновление структуры БД. Обновите страницу для обновления.");
     };
 
     main().then(() => {
-        console.log('main completed successfully');
+        console.log('Приложение успешно загружено');
     }).catch((error) => {
-        console.error('main failed:', error);
+        console.error('Ошибка при загрузке приложения:', error);
     });
 }
 
@@ -59,12 +59,8 @@ async function main(): Promise<void> {
     await initRegisterPopup();
     await initAuthPopup();
     await initAuth();
-    try {
-        await dbCalculatePayments();
-        await updatePayments();
-    } catch (error) {
-        console.error('Error occurred:', error);
-    }
+    await dbCalculatePayments();
+    await updatePayments();
 }
 
 async function initMenu(): Promise<void> {
@@ -125,11 +121,14 @@ async function initAuthPopup(): Promise<void> {
 }
 
 async function initAuth(): Promise<void> {
-    authToken = getTokenFromCookie();
+    authToken = getToken();
     if (!authToken) {
         return;
     }
-    authUser = getUser(authToken);
+    authUser = getUser();
+    if (!authUser) {
+        return;
+    }
 
     (document.getElementById('logout') as HTMLElement).style.display = 'inline-block';
     (document.getElementById('open-login-popup') as HTMLElement).style.display = 'none';
@@ -149,7 +148,7 @@ async function logout(): Promise<void> {
 
     (document.getElementById('user') as HTMLElement).innerText = '';
 
-    document.cookie = 'token=; Max-Age=0; path=/;';
+    localStorage.clear();
 
     const dropdownContent = (document.getElementById('menu-dropdown-content') as HTMLElement);
     dropdownContent.classList.remove('show');
@@ -204,7 +203,7 @@ async function getChartData(): Promise<object> {
         "labels": labels,
         "datasets": [
             {
-                label: "Investments",
+                label: "Инвестиции",
                 data: data1,
                 backgroundColor: "rgba(76, 175, 80, 0.2)",
                 borderColor: "rgba(76, 175, 80)",
@@ -325,16 +324,16 @@ async function updatePayments(): Promise<void> {
         dataListElem.appendChild(renderCurDateLine());
     }
 
-    let total: TotalItem = {title: 'Current invest', money: totalInvestedMoney};
+    let total: TotalItem = {title: 'Итого', money: totalInvestedMoney};
     let totalItem = renderTotalItem(total);
     dataListElem.appendChild(totalItem);
 
-    let totalIncome: TotalItem = {title: 'Current income', money: totalIncomeMoney};
+    let totalIncome: TotalItem = {title: 'Прибыль', money: totalIncomeMoney};
     let totalIncomeItem = renderTotalItem(totalIncome);
     dataListElem.appendChild(totalIncomeItem);
 
     if (totalDebtMoney > 0) {
-        let totalDebt: DebtItem = {title: 'Current debt', money: totalDebtMoney};
+        let totalDebt: DebtItem = {title: 'Долг', money: totalDebtMoney};
         let totalDebtItem = renderDebtItem(totalDebt);
         dataListElem.appendChild(totalDebtItem);
     }
@@ -377,7 +376,7 @@ function renderInvestItem(invest: Invest, index: number): HTMLDivElement {
         let closeButton = document.createElement('button');
         closeButton.className = 'invest-close-button';
         closeButton.innerHTML = 'X';
-        closeButton.title = 'Close investment';
+        closeButton.title = 'Закрыть инвестицию';
         closeButton.setAttribute('investId', invest.id + "");
         closeButton.addEventListener('click', closeInvest)
         dataItemClose.appendChild(closeButton);
@@ -423,7 +422,7 @@ function renderPaymentItem(payment: Payment, isDebt: boolean, index: number): HT
         let payedButton = document.createElement('button');
         payedButton.className = 'payment-close-button';
         payedButton.innerHTML = '✓';
-        payedButton.title = 'Approve payment';
+        payedButton.title = 'Оплата произведена';
         payedButton.setAttribute('paymentId', payment.id + '');
         payedButton.addEventListener('click', closePayment)
         dataItemClose.appendChild(payedButton);
@@ -492,7 +491,7 @@ async function addInvest(e: Event): Promise<void> {
     let createdDateValue = (document.getElementById('add-invest-date') as HTMLInputElement).value;
 
     if (!moneyValue || !incomeRatioValue || !createdDateValue) {
-        toast('Empty fields');
+        toast('Заполните все поля');
         return;
     }
 
@@ -506,9 +505,9 @@ async function addInvest(e: Event): Promise<void> {
     let res = await dbAddInvest(money, incomeRatio, createdDate);
     if (Number.isInteger(res)) {
         (document.getElementById('add-invest-form') as HTMLFormElement).reset();
-        toast('Invest added');
+        toast('Инвестиция добавлена');
     } else {
-        toast(res, true);
+        toastError(res);
     }
 
     await dbCalculatePayments();
@@ -530,18 +529,18 @@ async function closeInvest(this: HTMLButtonElement): Promise<void> {
         if (!payment.isPayed) {
             let res = await dbClosePayment(payment.id!);
             if (Number.isInteger(res)) {
-                toast('Unpdayed payment closed');
+                toast('Долг автоматически оплачен');
             } else {
-                toast(res, true);
+                toastError(res);
             }
         }
     }
 
     let res = await dbCloseInvest(investId);
     if (Number.isInteger(res)) {
-        toast('Invest closed');
+        toast('Инвестиция закрыта');
     } else {
-        toast(res, true);
+        toastError(res);
     }
 
     await updatePayments();
@@ -555,9 +554,9 @@ async function closePayment(this: HTMLButtonElement): Promise<void> {
 
     let res = await dbClosePayment(paymentId);
     if (Number.isInteger(res)) {
-        toast('Payment closed');
+        toast('Долг оплачен');
     } else {
-        toast(res, true);
+        toastError(res);
     }
 
     await dbCalculatePayments();
@@ -571,9 +570,9 @@ async function exportData(): Promise<void> {
     let exportString = JSON.stringify({invests: invests, payments: payments});
     try {
         await navigator.clipboard.writeText(exportString);
-        toast('Export data copied to clipboard');
+        toast('Данные скопированы в буфер обмена');
     } catch (err) {
-        toast('Failed to copy export data to clipboard', true);
+        toastError('Не удалось скопировать данные в буфер обмена');
     }
 }
 
@@ -585,10 +584,10 @@ async function importData(): Promise<void> {
     try {
         let importData = JSON.parse(importJson);
         await dbImportData(importData);
-        toast('Import success');
+        toast('Импорт завершен');
         setTimeout(() => document.location.reload(), 1000);
     } catch (err) {
-        toast('Failed to parse JSON', true);
+        toastError('Не удалось распарсить данные');
     }
 }
 
@@ -600,7 +599,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
     const confirmPassword = (document.getElementById("register-confirm-password") as HTMLInputElement).value.trim();
 
     if (password !== confirmPassword) {
-        toast("Пароли не совпадают!", true);
+        toastError("Пароли не совпадают!");
         return;
     }
 
@@ -616,7 +615,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
             (element as HTMLElement).style.display = 'none';
         }
 
-        const response = await fetch(api_url + "/api/register", {
+        const response = await fetch(api_url + "/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -627,14 +626,14 @@ async function userRegister(event: SubmitEvent): Promise<void> {
         const result = await response.json();
         if (result.status == 'success') {
             if (!result.token) {
-                toast("Не удалось получить токен", true);
+                toastError("Не удалось получить токен, что-то сломалось...", 5000);
                 return;
             }
 
             toast("Регистрация успешна!");
             (document.getElementById("register-popup") as HTMLElement).style.display = "none";
 
-            setTokenToCookie(result.token);
+            setToken(result.token);
             await initAuth();
         } else if (result.error) {
             switch (result.error) {
@@ -659,11 +658,11 @@ async function userRegister(event: SubmitEvent): Promise<void> {
                     break;
             }
         } else {
-            toast("Unknown error: " + JSON.stringify(result), true);
+            toastError("Ошибка: " + JSON.stringify(result));
         }
     } catch (error) {
         console.error("Неизвестная ошибка:", error);
-        toast("Неизвестная ошибка", true);
+        toastError("Неизвестная ошибка");
     } finally {
         spinner.style.display = "none";
         button.disabled = false;
@@ -688,7 +687,7 @@ async function userLogin(event: SubmitEvent): Promise<void> {
             (element as HTMLElement).style.display = 'none';
         }
 
-        const response = await fetch(api_url + "/api/login", {
+        const response = await fetch(api_url + "/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -699,14 +698,14 @@ async function userLogin(event: SubmitEvent): Promise<void> {
         const result = await response.json();
         if (result.status == 'success') {
             if (!result.token) {
-                toast("Не удалось получить токен", true);
+                toastError("Не удалось получить токен, что-то сломалось...", 5000);
                 return;
             }
 
             toast("Авторизация успешна!");
             (document.getElementById("login-popup") as HTMLElement).style.display = "none";
 
-            setTokenToCookie(result.token);
+            setToken(result.token);
             await initAuth();
         } else if (result.error) {
             switch (result.error) {
@@ -731,38 +730,62 @@ async function userLogin(event: SubmitEvent): Promise<void> {
                     break;
             }
         } else {
-            toast("Unknown error: " + JSON.stringify(result), true);
+            toastError("Неизвестная ошибка: " + JSON.stringify(result));
         }
     } catch (error) {
         console.error("Неизвестная ошибка:", error);
-        toast("Неизвестная ошибка", true);
+        toastError("Неизвестная ошибка");
     } finally {
         spinner.style.display = "none";
         button.disabled = false;
     }
 }
 
-function setTokenToCookie(token: string ): void {
-    const tokenData = parseJWT(token);
-
-    document.cookie = `token=${token}; max-age=${tokenData.exp}; Secure; SameSite=Strict; path=/`;
-}
-
-function getTokenFromCookie(): string|null {
-    const nameEQ = "token=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+async function sendRequest(url: string, method: string = 'GET', body: any = null): Promise<any> {
+    if (!authToken) {
+        throw new Error("Неавторизованный запрос, токен не найден");
     }
-    return null;
+
+    try {
+        const response = await fetch(api_url + url, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
+            },
+            body: body ? JSON.stringify(body) : null
+        });
+
+        if (!response.ok) {
+            if (response.status == 401) {
+                toastError('Неавторизованный запрос, возможно истекло время токена, просто авторизуйтесь снова', 7000);
+                await logout();
+                return null;
+            }
+            console.error(`Ошибка: ${response.statusText}`);
+            return null;
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Неизвестная ошибка:", error);
+        return null;
+    }
 }
 
-function getUser(token: string): string {
+function setToken(token: string ): void {
     const tokenData = parseJWT(token);
 
-    return tokenData.username;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', tokenData.username);
+}
+
+function getToken(): string|null {
+    return localStorage.getItem('token');
+}
+
+function getUser(): string|null {
+    return localStorage.getItem('user');
 }
 
 function parseJWT(token: string): any {
@@ -805,18 +828,26 @@ function formatMoney(money: number): string {
     return moneyFormatter.format(money);
 }
 
-function toast(text: string | number | undefined, isError: boolean = false): void {
-    if (text == undefined) {
-        text = 'Unexpected error';
-    }
-
+function toast(text: string, duration: number = 3000): void {
     Toastify({
         text: text,
-        duration: 2000,
+        duration: duration,
         gravity: "top",
         position: "center",
         style: {
-            background: isError ? '#AF4C50' : '#4CAF50',
+            background: '#4CAF50',
+        }
+    }).showToast();
+}
+
+function toastError(text: string | number | undefined, duration: number = 3000): void {
+    Toastify({
+        text: text || 'Неизвестная ошибка',
+        duration: duration,
+        gravity: "top",
+        position: "center",
+        style: {
+            background: '#AF4C50',
         }
     }).showToast();
 }
@@ -829,7 +860,7 @@ document.addEventListener("DOMContentLoaded", () => {
     (document.getElementById('close-chart') as HTMLButtonElement).addEventListener("click", closeChart);
     (document.getElementById('invest-export') as HTMLButtonElement).addEventListener('click', exportData);
     (document.getElementById('invest-import') as HTMLButtonElement).addEventListener('click', importData);
-    (document.getElementById('register-form') as HTMLFormElement).addEventListener('submit', userRegister);
     (document.getElementById('logout') as HTMLButtonElement).addEventListener('click', logout);
+    (document.getElementById('register-form') as HTMLFormElement).addEventListener('submit', userRegister);
     (document.getElementById('login-form') as HTMLFormElement).addEventListener('submit', userLogin);
 });

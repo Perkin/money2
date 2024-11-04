@@ -272,6 +272,7 @@ h1 {
     right: 10px;
     font-size: 24px;
     color: #f1f1f1;
+    cursor: pointer;
 }
 
 .popup-form input {

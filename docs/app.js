@@ -198,7 +198,7 @@ function dbDoAsync(callback) {
         });
     });
 }
-const api_url = 'https://money-7won.onrender.com';
+const api_url = 'https://money-7won.onrender.com/api';
 let authToken;
 let authUser;
 let db;
@@ -221,12 +221,12 @@ openRequest.onsuccess = function () {
     db = openRequest.result;
     db.onversionchange = function () {
         db.close();
-        alert("Db is outdated, refresh the page");
+        alert("Требуется обновление структуры БД. Обновите страницу для обновления.");
     };
     main().then(() => {
-        console.log('main completed successfully');
+        console.log('Приложение успешно загружено');
     }).catch((error) => {
-        console.error('main failed:', error);
+        console.error('Ошибка при загрузке приложения:', error);
     });
 };
 function main() {
@@ -235,13 +235,8 @@ function main() {
         yield initRegisterPopup();
         yield initAuthPopup();
         yield initAuth();
-        try {
-            yield dbCalculatePayments();
-            yield updatePayments();
-        }
-        catch (error) {
-            console.error('Error occurred:', error);
-        }
+        yield dbCalculatePayments();
+        yield updatePayments();
     });
 }
 function initMenu() {
@@ -298,11 +293,14 @@ function initAuthPopup() {
 }
 function initAuth() {
     return __awaiter(this, void 0, void 0, function* () {
-        authToken = getTokenFromCookie();
+        authToken = getToken();
         if (!authToken) {
             return;
         }
-        authUser = getUser(authToken);
+        authUser = getUser();
+        if (!authUser) {
+            return;
+        }
         document.getElementById('logout').style.display = 'inline-block';
         document.getElementById('open-login-popup').style.display = 'none';
         document.getElementById('open-register-popup').style.display = 'none';
@@ -318,7 +316,7 @@ function logout() {
         document.getElementById('open-login-popup').style.display = 'inline-block';
         document.getElementById('open-register-popup').style.display = 'inline-block';
         document.getElementById('user').innerText = '';
-        document.cookie = 'token=; Max-Age=0; path=/;';
+        localStorage.clear();
         const dropdownContent = document.getElementById('menu-dropdown-content');
         dropdownContent.classList.remove('show');
         toast("Вы успешно вышли!");
@@ -367,7 +365,7 @@ function getChartData() {
             "labels": labels,
             "datasets": [
                 {
-                    label: "Investments",
+                    label: "Инвестиции",
                     data: data1,
                     backgroundColor: "rgba(76, 175, 80, 0.2)",
                     borderColor: "rgba(76, 175, 80)",
@@ -474,14 +472,14 @@ function updatePayments() {
         if (!curDateLineDrawn) {
             dataListElem.appendChild(renderCurDateLine());
         }
-        let total = { title: 'Current invest', money: totalInvestedMoney };
+        let total = { title: 'Итого', money: totalInvestedMoney };
         let totalItem = renderTotalItem(total);
         dataListElem.appendChild(totalItem);
-        let totalIncome = { title: 'Current income', money: totalIncomeMoney };
+        let totalIncome = { title: 'Прибыль', money: totalIncomeMoney };
         let totalIncomeItem = renderTotalItem(totalIncome);
         dataListElem.appendChild(totalIncomeItem);
         if (totalDebtMoney > 0) {
-            let totalDebt = { title: 'Current debt', money: totalDebtMoney };
+            let totalDebt = { title: 'Долг', money: totalDebtMoney };
             let totalDebtItem = renderDebtItem(totalDebt);
             dataListElem.appendChild(totalDebtItem);
         }
@@ -517,7 +515,7 @@ function renderInvestItem(invest, index) {
         let closeButton = document.createElement('button');
         closeButton.className = 'invest-close-button';
         closeButton.innerHTML = 'X';
-        closeButton.title = 'Close investment';
+        closeButton.title = 'Закрыть инвестицию';
         closeButton.setAttribute('investId', invest.id + "");
         closeButton.addEventListener('click', closeInvest);
         dataItemClose.appendChild(closeButton);
@@ -554,7 +552,7 @@ function renderPaymentItem(payment, isDebt, index) {
         let payedButton = document.createElement('button');
         payedButton.className = 'payment-close-button';
         payedButton.innerHTML = '✓';
-        payedButton.title = 'Approve payment';
+        payedButton.title = 'Оплата произведена';
         payedButton.setAttribute('paymentId', payment.id + '');
         payedButton.addEventListener('click', closePayment);
         dataItemClose.appendChild(payedButton);
@@ -609,7 +607,7 @@ function addInvest(e) {
         let incomeRatioValue = document.getElementById('add-invest-income-ratio').value;
         let createdDateValue = document.getElementById('add-invest-date').value;
         if (!moneyValue || !incomeRatioValue || !createdDateValue) {
-            toast('Empty fields');
+            toast('Заполните все поля');
             return;
         }
         let money = parseFloat(moneyValue);
@@ -620,10 +618,10 @@ function addInvest(e) {
         let res = yield dbAddInvest(money, incomeRatio, createdDate);
         if (Number.isInteger(res)) {
             document.getElementById('add-invest-form').reset();
-            toast('Invest added');
+            toast('Инвестиция добавлена');
         }
         else {
-            toast(res, true);
+            toastError(res);
         }
         yield dbCalculatePayments();
         yield updatePayments();
@@ -643,19 +641,19 @@ function closeInvest() {
             if (!payment.isPayed) {
                 let res = yield dbClosePayment(payment.id);
                 if (Number.isInteger(res)) {
-                    toast('Unpdayed payment closed');
+                    toast('Долг автоматически оплачен');
                 }
                 else {
-                    toast(res, true);
+                    toastError(res);
                 }
             }
         }
         let res = yield dbCloseInvest(investId);
         if (Number.isInteger(res)) {
-            toast('Invest closed');
+            toast('Инвестиция закрыта');
         }
         else {
-            toast(res, true);
+            toastError(res);
         }
         yield updatePayments();
     });
@@ -668,10 +666,10 @@ function closePayment() {
         }
         let res = yield dbClosePayment(paymentId);
         if (Number.isInteger(res)) {
-            toast('Payment closed');
+            toast('Долг оплачен');
         }
         else {
-            toast(res, true);
+            toastError(res);
         }
         yield dbCalculatePayments();
         yield updatePayments();
@@ -684,10 +682,10 @@ function exportData() {
         let exportString = JSON.stringify({ invests: invests, payments: payments });
         try {
             yield navigator.clipboard.writeText(exportString);
-            toast('Export data copied to clipboard');
+            toast('Данные скопированы в буфер обмена');
         }
         catch (err) {
-            toast('Failed to copy export data to clipboard', true);
+            toastError('Не удалось скопировать данные в буфер обмена');
         }
     });
 }
@@ -700,11 +698,11 @@ function importData() {
         try {
             let importData = JSON.parse(importJson);
             yield dbImportData(importData);
-            toast('Import success');
+            toast('Импорт завершен');
             setTimeout(() => document.location.reload(), 1000);
         }
         catch (err) {
-            toast('Failed to parse JSON', true);
+            toastError('Не удалось распарсить данные');
         }
     });
 }
@@ -715,7 +713,7 @@ function userRegister(event) {
         const password = document.getElementById("register-password").value.trim();
         const confirmPassword = document.getElementById("register-confirm-password").value.trim();
         if (password !== confirmPassword) {
-            toast("Пароли не совпадают!", true);
+            toastError("Пароли не совпадают!");
             return;
         }
         const button = document.getElementById("register-button");
@@ -727,7 +725,7 @@ function userRegister(event) {
             for (let element of elements) {
                 element.style.display = 'none';
             }
-            const response = yield fetch(api_url + "/api/register", {
+            const response = yield fetch(api_url + "/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -737,12 +735,12 @@ function userRegister(event) {
             const result = yield response.json();
             if (result.status == 'success') {
                 if (!result.token) {
-                    toast("Не удалось получить токен", true);
+                    toastError("Не удалось получить токен, что-то сломалось...", 5000);
                     return;
                 }
                 toast("Регистрация успешна!");
                 document.getElementById("register-popup").style.display = "none";
-                setTokenToCookie(result.token);
+                setToken(result.token);
                 yield initAuth();
             }
             else if (result.error) {
@@ -765,12 +763,12 @@ function userRegister(event) {
                 }
             }
             else {
-                toast("Unknown error: " + JSON.stringify(result), true);
+                toastError("Ошибка: " + JSON.stringify(result));
             }
         }
         catch (error) {
             console.error("Неизвестная ошибка:", error);
-            toast("Неизвестная ошибка", true);
+            toastError("Неизвестная ошибка");
         }
         finally {
             spinner.style.display = "none";
@@ -792,7 +790,7 @@ function userLogin(event) {
             for (let element of elements) {
                 element.style.display = 'none';
             }
-            const response = yield fetch(api_url + "/api/login", {
+            const response = yield fetch(api_url + "/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -802,12 +800,12 @@ function userLogin(event) {
             const result = yield response.json();
             if (result.status == 'success') {
                 if (!result.token) {
-                    toast("Не удалось получить токен", true);
+                    toastError("Не удалось получить токен, что-то сломалось...", 5000);
                     return;
                 }
                 toast("Авторизация успешна!");
                 document.getElementById("login-popup").style.display = "none";
-                setTokenToCookie(result.token);
+                setToken(result.token);
                 yield initAuth();
             }
             else if (result.error) {
@@ -830,12 +828,12 @@ function userLogin(event) {
                 }
             }
             else {
-                toast("Unknown error: " + JSON.stringify(result), true);
+                toastError("Неизвестная ошибка: " + JSON.stringify(result));
             }
         }
         catch (error) {
             console.error("Неизвестная ошибка:", error);
-            toast("Неизвестная ошибка", true);
+            toastError("Неизвестная ошибка");
         }
         finally {
             spinner.style.display = "none";
@@ -843,25 +841,47 @@ function userLogin(event) {
         }
     });
 }
-function setTokenToCookie(token) {
-    const tokenData = parseJWT(token);
-    document.cookie = `token=${token}; max-age=${tokenData.exp}; Secure; SameSite=Strict; path=/`;
+function sendRequest(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, method = 'GET', body = null) {
+        if (!authToken) {
+            throw new Error("Неавторизованный запрос, токен не найден");
+        }
+        try {
+            const response = yield fetch(api_url + url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${authToken}`
+                },
+                body: body ? JSON.stringify(body) : null
+            });
+            if (!response.ok) {
+                if (response.status == 401) {
+                    toastError('Неавторизованный запрос, возможно истекло время токена, просто авторизуйтесь снова', 7000);
+                    yield logout();
+                    return null;
+                }
+                console.error(`Ошибка: ${response.statusText}`);
+                return null;
+            }
+            return response.json();
+        }
+        catch (error) {
+            console.error("Неизвестная ошибка:", error);
+            return null;
+        }
+    });
 }
-function getTokenFromCookie() {
-    const nameEQ = "token=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ')
-            c = c.substring(1);
-        if (c.indexOf(nameEQ) === 0)
-            return c.substring(nameEQ.length);
-    }
-    return null;
-}
-function getUser(token) {
+function setToken(token) {
     const tokenData = parseJWT(token);
-    return tokenData.username;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', tokenData.username);
+}
+function getToken() {
+    return localStorage.getItem('token');
+}
+function getUser() {
+    return localStorage.getItem('user');
 }
 function parseJWT(token) {
     const parts = token.split('.');
@@ -895,17 +915,25 @@ let moneyFormatter = new Intl.NumberFormat('default', {
 function formatMoney(money) {
     return moneyFormatter.format(money);
 }
-function toast(text, isError = false) {
-    if (text == undefined) {
-        text = 'Unexpected error';
-    }
+function toast(text, duration = 3000) {
     Toastify({
         text: text,
-        duration: 2000,
+        duration: duration,
         gravity: "top",
         position: "center",
         style: {
-            background: isError ? '#AF4C50' : '#4CAF50',
+            background: '#4CAF50',
+        }
+    }).showToast();
+}
+function toastError(text, duration = 3000) {
+    Toastify({
+        text: text || 'Неизвестная ошибка',
+        duration: duration,
+        gravity: "top",
+        position: "center",
+        style: {
+            background: '#AF4C50',
         }
     }).showToast();
 }
@@ -917,7 +945,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('close-chart').addEventListener("click", closeChart);
     document.getElementById('invest-export').addEventListener('click', exportData);
     document.getElementById('invest-import').addEventListener('click', importData);
-    document.getElementById('register-form').addEventListener('submit', userRegister);
     document.getElementById('logout').addEventListener('click', logout);
+    document.getElementById('register-form').addEventListener('submit', userRegister);
     document.getElementById('login-form').addEventListener('submit', userLogin);
 });
