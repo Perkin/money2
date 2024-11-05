@@ -103,7 +103,7 @@ async function dbAddInvest(money: number, incomeRatio: number, createdDate: Date
         createdDate: createdDate,
         closedDate: null,
         isActive: 1,
-        updatedAt: createdDate
+        updatedAt: new Date()
     };
 
     return dbDoAsync(() => invests.add(invest));
@@ -113,7 +113,7 @@ async function dbCloseInvest(investId: number): Promise<dbResult> {
     let invest = await dbGetInvestById(investId);
     invest.isActive = 0;
     invest.closedDate = new Date();
-    invest.updatedAt = invest.closedDate;
+    invest.updatedAt = new Date();
 
     let transaction = db.transaction("invests", "readwrite");
     let invests = transaction.objectStore("invests");
@@ -143,9 +143,7 @@ async function dbCalculatePayments(): Promise<void> {
         }
 
         lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 1);
-        lastPaymentDate.setHours(0);
-        lastPaymentDate.setMinutes(0);
-        lastPaymentDate.setSeconds(0);
+        lastPaymentDate.setHours(0, 0 ,0);
 
         await dbAddPayment(invest.id!, invest.money, invest.incomeRatio || defaultIncomeRatio, lastPaymentDate);
     }
@@ -202,12 +200,14 @@ async function dbGetPaymentById(paymentId: number): Promise<Payment> {
     return dbDoAsync (() => payments.get(paymentId));
 }
 
-async function dbImportData(importData: any): Promise<void> {
+async function dbImportData(importData: any, cleanImport: boolean = false): Promise<void> {
     let transaction = db.transaction(["payments", "invests"], "readwrite");
 
     let invests = transaction.objectStore("invests");
-    // Clean DB
-    await dbDoAsync (() => invests.clear());
+
+    if (cleanImport) {
+        await dbDoAsync (() => invests.clear());
+    }
 
     // Export converts date to string, so we should cast them back to Date
     for (const invest of importData.invests) {
@@ -220,7 +220,10 @@ async function dbImportData(importData: any): Promise<void> {
     }
 
     let payments = transaction.objectStore("payments");
-    await dbDoAsync (() => payments.clear());
+
+    if (cleanImport) {
+        await dbDoAsync (() => payments.clear());
+    }
 
     for (const payment of importData.payments) {
         payment.paymentDate = new Date(payment.paymentDate);

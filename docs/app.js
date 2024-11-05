@@ -77,7 +77,7 @@ function dbAddInvest(money, incomeRatio, createdDate) {
             createdDate: createdDate,
             closedDate: null,
             isActive: 1,
-            updatedAt: createdDate
+            updatedAt: new Date()
         };
         return dbDoAsync(() => invests.add(invest));
     });
@@ -87,7 +87,7 @@ function dbCloseInvest(investId) {
         let invest = yield dbGetInvestById(investId);
         invest.isActive = 0;
         invest.closedDate = new Date();
-        invest.updatedAt = invest.closedDate;
+        invest.updatedAt = new Date();
         let transaction = db.transaction("invests", "readwrite");
         let invests = transaction.objectStore("invests");
         return dbDoAsync(() => invests.put(invest));
@@ -111,9 +111,7 @@ function dbCalculatePayments() {
                 lastPaymentDate = lastPayment.paymentDate;
             }
             lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 1);
-            lastPaymentDate.setHours(0);
-            lastPaymentDate.setMinutes(0);
-            lastPaymentDate.setSeconds(0);
+            lastPaymentDate.setHours(0, 0, 0);
             yield dbAddPayment(invest.id, invest.money, invest.incomeRatio || defaultIncomeRatio, lastPaymentDate);
         }
     });
@@ -167,12 +165,13 @@ function dbGetPaymentById(paymentId) {
         return dbDoAsync(() => payments.get(paymentId));
     });
 }
-function dbImportData(importData) {
-    return __awaiter(this, void 0, void 0, function* () {
+function dbImportData(importData_1) {
+    return __awaiter(this, arguments, void 0, function* (importData, cleanImport = false) {
         let transaction = db.transaction(["payments", "invests"], "readwrite");
         let invests = transaction.objectStore("invests");
-        // Clean DB
-        yield dbDoAsync(() => invests.clear());
+        if (cleanImport) {
+            yield dbDoAsync(() => invests.clear());
+        }
         // Export converts date to string, so we should cast them back to Date
         for (const invest of importData.invests) {
             invest.createdDate = new Date(invest.createdDate);
@@ -183,7 +182,9 @@ function dbImportData(importData) {
             yield dbDoAsync(() => invests.put(invest));
         }
         let payments = transaction.objectStore("payments");
-        yield dbDoAsync(() => payments.clear());
+        if (cleanImport) {
+            yield dbDoAsync(() => payments.clear());
+        }
         for (const payment of importData.payments) {
             payment.paymentDate = new Date(payment.paymentDate);
             payment.updatedAt = new Date(payment.updatedAt);
@@ -621,8 +622,7 @@ function addInvest(e) {
         let money = parseFloat(moneyValue);
         let incomeRatio = parseFloat(incomeRatioValue);
         let createdDate = new Date(createdDateValue);
-        let now = new Date();
-        createdDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        createdDate.setHours(0, 0, 0);
         let res = yield dbAddInvest(money, incomeRatio, createdDate);
         if (Number.isInteger(res)) {
             document.getElementById('add-invest-form').reset();
@@ -633,6 +633,7 @@ function addInvest(e) {
         }
         yield dbCalculatePayments();
         yield updatePayments();
+        yield updateRemoteData();
     });
 }
 function closeInvest() {
@@ -664,6 +665,7 @@ function closeInvest() {
             toastError(res);
         }
         yield updatePayments();
+        yield updateRemoteData();
     });
 }
 function closePayment() {
@@ -681,6 +683,7 @@ function closePayment() {
         }
         yield dbCalculatePayments();
         yield updatePayments();
+        yield updateRemoteData();
     });
 }
 function exportData() {
@@ -705,7 +708,7 @@ function importData() {
         }
         try {
             let importData = JSON.parse(importJson);
-            yield dbImportData(importData);
+            yield dbImportData(importData, true);
             toast('Импорт завершен');
             setTimeout(() => document.location.reload(), 1000);
         }
@@ -851,24 +854,27 @@ function userLogin(event) {
 }
 function syncUpdates() {
     return __awaiter(this, void 0, void 0, function* () {
-        const lastSyncDate = localStorage.getItem('lastSyncDate');
+        const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
         const result = yield sendRequest(`/updates?since=${lastSyncDate}`);
-        if (result && result.status == 'success' && result.updates) {
-            yield updateLocalData(result.updates);
+        if (result && result.status == 'success') {
+            yield updateLocalData(result);
         }
         else {
-            yield updateRemoteDate(lastSyncDate);
+            yield updateRemoteData();
         }
     });
 }
-function updateLocalData(updates) {
+function updateLocalData(result) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(updates);
+        yield dbImportData(result);
         localStorage.setItem('lastSyncDate', new Date().toISOString());
+        toast('Новые данные загружены');
+        setTimeout(() => document.location.reload(), 1000);
     });
 }
-function updateRemoteDate(lastSyncDate) {
+function updateRemoteData() {
     return __awaiter(this, void 0, void 0, function* () {
+        const lastSyncDate = localStorage.getItem('lastSyncDate');
         let investFilter = {};
         let paymentFilter = {};
         if (lastSyncDate) {

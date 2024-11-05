@@ -507,8 +507,7 @@ async function addInvest(e: Event): Promise<void> {
     let incomeRatio = parseFloat(incomeRatioValue);
     let createdDate = new Date(createdDateValue);
 
-    let now = new Date();
-    createdDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+    createdDate.setHours(0, 0, 0);
 
     let res = await dbAddInvest(money, incomeRatio, createdDate);
     if (Number.isInteger(res)) {
@@ -520,6 +519,7 @@ async function addInvest(e: Event): Promise<void> {
 
     await dbCalculatePayments();
     await updatePayments();
+    await updateRemoteData();
 }
 
 async function closeInvest(this: HTMLButtonElement): Promise<void> {
@@ -552,6 +552,7 @@ async function closeInvest(this: HTMLButtonElement): Promise<void> {
     }
 
     await updatePayments();
+    await updateRemoteData();
 }
 
 async function closePayment(this: HTMLButtonElement): Promise<void> {
@@ -569,6 +570,7 @@ async function closePayment(this: HTMLButtonElement): Promise<void> {
 
     await dbCalculatePayments();
     await updatePayments();
+    await updateRemoteData();
 }
 
 async function exportData(): Promise<void> {
@@ -591,7 +593,7 @@ async function importData(): Promise<void> {
     }
     try {
         let importData = JSON.parse(importJson);
-        await dbImportData(importData);
+        await dbImportData(importData, true);
         toast('Импорт завершен');
         setTimeout(() => document.location.reload(), 1000);
     } catch (err) {
@@ -750,23 +752,27 @@ async function userLogin(event: SubmitEvent): Promise<void> {
 }
 
 async function syncUpdates(): Promise<void> {
-    const lastSyncDate = localStorage.getItem('lastSyncDate');
+    const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
 
     const result = await sendRequest(`/updates?since=${lastSyncDate}`);
-    if (result && result.status == 'success' && result.updates) {
-        await updateLocalData(result.updates);
+    if (result && result.status == 'success') {
+        await updateLocalData(result);
     } else {
-        await updateRemoteDate(lastSyncDate);
+        await updateRemoteData();
     }
 }
 
-async function updateLocalData(updates: any): Promise<void> {
-    console.log(updates);
+async function updateLocalData(result: any): Promise<void> {
+    await dbImportData(result);
 
     localStorage.setItem('lastSyncDate', new Date().toISOString());
+    toast('Новые данные загружены');
+    setTimeout(() => document.location.reload(), 1000);
 }
 
-async function updateRemoteDate(lastSyncDate: string | null): Promise<void> {
+async function updateRemoteData(): Promise<void> {
+    const lastSyncDate = localStorage.getItem('lastSyncDate');
+
     let investFilter : InvestFilter = {};
     let paymentFilter : PaymentFilter = {};
 
@@ -781,7 +787,6 @@ async function updateRemoteDate(lastSyncDate: string | null): Promise<void> {
     if (!invests.length && !payments.length ) {
         return;
     }
-
     const exportJson = {invests: invests, payments: payments};
 
     const result = await sendRequest('/update', 'POST', exportJson);
