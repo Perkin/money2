@@ -760,12 +760,13 @@ async function syncUpdates(): Promise<void> {
     } else {
         await updateRemoteData();
     }
+
+    localStorage.setItem('lastSyncDate', new Date().toISOString());
 }
 
 async function updateLocalData(result: any): Promise<void> {
     await dbImportData(result);
 
-    localStorage.setItem('lastSyncDate', new Date().toISOString());
     toast('Новые данные загружены');
     setTimeout(() => document.location.reload(), 1000);
 }
@@ -791,7 +792,6 @@ async function updateRemoteData(): Promise<void> {
 
     const result = await sendRequest('/update', 'POST', exportJson);
     if (result && result.status == 'success') {
-        localStorage.setItem('lastSyncDate', new Date().toISOString());
         toast('Новые данные успешно отправлены на сервер');
     }
 }
