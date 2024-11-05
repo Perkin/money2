@@ -51,12 +51,16 @@ function dbGetInvestById(investId) {
 }
 function dbGetInvests() {
     return __awaiter(this, arguments, void 0, function* (filter = {}) {
-        let filterOnlyActive = filter.filterOnlyActive;
         let transaction = db.transaction("invests");
         let invests = transaction.objectStore("invests");
-        if (filterOnlyActive == 1) {
+        if (filter.filterOnlyActive) {
             let showAllIndex = invests.index('isActiveIdx');
             return dbDoAsync(() => showAllIndex.getAll(1));
+        }
+        else if (filter.updatedAt) {
+            let updatedAtIndex = invests.index('updatedAtIdx');
+            let range = IDBKeyRange.lowerBound(filter.updatedAt);
+            return dbDoAsync(() => updatedAtIndex.getAll(range));
         }
         else {
             return dbDoAsync(() => invests.getAll());
@@ -118,10 +122,14 @@ function dbGetPayments() {
     return __awaiter(this, arguments, void 0, function* (filter = {}) {
         let transaction = db.transaction("payments");
         let payments = transaction.objectStore("payments");
-        let investId = filter.id;
-        if (investId != undefined) {
+        if (filter.id) {
             let investIndex = payments.index('investIdIdx');
-            return dbDoAsync(() => investIndex.getAll(investId));
+            return dbDoAsync(() => investIndex.getAll(filter.id));
+        }
+        else if (filter.updatedAt) {
+            let updatedAtIndex = payments.index('updatedAtIdx');
+            let range = IDBKeyRange.lowerBound(filter.updatedAt);
+            return dbDoAsync(() => updatedAtIndex.getAll(range));
         }
         else {
             return dbDoAsync(() => payments.getAll());
@@ -167,18 +175,18 @@ function dbImportData(importData) {
         yield dbDoAsync(() => invests.clear());
         // Export converts date to string, so we should cast them back to Date
         for (const invest of importData.invests) {
-            invest.createdDate = new Date(Date.parse(invest.createdDate));
-            invest.updatedAt = new Date(Date.parse(invest.updatedAt));
+            invest.createdDate = new Date(invest.createdDate);
+            invest.updatedAt = new Date(invest.updatedAt);
             if (!invest.isActive && invest.closedDate) {
-                invest.closedDate = new Date(Date.parse(invest.closedDate));
+                invest.closedDate = new Date(invest.closedDate);
             }
             yield dbDoAsync(() => invests.put(invest));
         }
         let payments = transaction.objectStore("payments");
         yield dbDoAsync(() => payments.clear());
         for (const payment of importData.payments) {
-            payment.paymentDate = new Date(Date.parse(payment.paymentDate));
-            payment.updatedAt = new Date(Date.parse(payment.updatedAt));
+            payment.paymentDate = new Date(payment.paymentDate);
+            payment.updatedAt = new Date(payment.updatedAt);
             yield dbDoAsync(() => payments.put(payment));
         }
     });
@@ -199,10 +207,9 @@ function dbDoAsync(callback) {
     });
 }
 const api_url = 'https://money-7won.onrender.com/api';
-let authToken;
-let authUser;
 let db;
 let dbVersion = 4;
+let authUser;
 //delete db (for testing)
 // let deleteRequest = indexedDB.deleteDatabase('money');
 // deleteRequest.onsuccess = function () {
@@ -231,12 +238,12 @@ openRequest.onsuccess = function () {
 };
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+        yield dbCalculatePayments();
+        yield updatePayments();
         yield initMenu();
         yield initRegisterPopup();
         yield initAuthPopup();
         yield initAuth();
-        yield dbCalculatePayments();
-        yield updatePayments();
     });
 }
 function initMenu() {
@@ -293,30 +300,31 @@ function initAuthPopup() {
 }
 function initAuth() {
     return __awaiter(this, void 0, void 0, function* () {
-        authToken = getToken();
-        if (!authToken) {
+        const token = getToken();
+        if (!token) {
             return;
         }
-        authUser = getUser();
-        if (!authUser) {
-            return;
-        }
+        const tokenData = parseJWT(token);
+        authUser = {
+            token: token,
+            username: tokenData.username
+        };
         document.getElementById('logout').style.display = 'inline-block';
         document.getElementById('open-login-popup').style.display = 'none';
         document.getElementById('open-register-popup').style.display = 'none';
-        document.getElementById('user').innerText = authUser;
+        document.getElementById('user').innerText = authUser.username;
+        yield syncUpdates();
     });
 }
 // Функция для выхода
 function logout() {
     return __awaiter(this, void 0, void 0, function* () {
         authUser = null;
-        authToken = null;
+        removeToken();
         document.getElementById('logout').style.display = 'none';
         document.getElementById('open-login-popup').style.display = 'inline-block';
         document.getElementById('open-register-popup').style.display = 'inline-block';
         document.getElementById('user').innerText = '';
-        localStorage.clear();
         const dropdownContent = document.getElementById('menu-dropdown-content');
         dropdownContent.classList.remove('show');
         toast("Вы успешно вышли!");
@@ -612,7 +620,7 @@ function addInvest(e) {
         }
         let money = parseFloat(moneyValue);
         let incomeRatio = parseFloat(incomeRatioValue);
-        let createdDate = new Date(Date.parse(createdDateValue));
+        let createdDate = new Date(createdDateValue);
         let now = new Date();
         createdDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
         let res = yield dbAddInvest(money, incomeRatio, createdDate);
@@ -841,9 +849,48 @@ function userLogin(event) {
         }
     });
 }
+function syncUpdates() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const lastSyncDate = localStorage.getItem('lastSyncDate');
+        const result = yield sendRequest(`/updates?since=${lastSyncDate}`);
+        if (result && result.status == 'success' && result.updates) {
+            yield updateLocalData(result.updates);
+        }
+        else {
+            yield updateRemoteDate(lastSyncDate);
+        }
+    });
+}
+function updateLocalData(updates) {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log(updates);
+        localStorage.setItem('lastSyncDate', new Date().toISOString());
+    });
+}
+function updateRemoteDate(lastSyncDate) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let investFilter = {};
+        let paymentFilter = {};
+        if (lastSyncDate) {
+            investFilter = { updatedAt: new Date(lastSyncDate) };
+            paymentFilter = { updatedAt: new Date(lastSyncDate) };
+        }
+        const invests = yield dbGetInvests(investFilter);
+        const payments = yield dbGetPayments(paymentFilter);
+        if (!invests && !payments) {
+            return;
+        }
+        const exportString = JSON.stringify({ invests: invests, payments: payments });
+        const result = yield sendRequest('/update', 'POST', exportString);
+        if (result && result.status == 'success') {
+            localStorage.setItem('lastSyncDate', new Date().toISOString());
+            toast('Новые данные успешно отправлены на сервер');
+        }
+    });
+}
 function sendRequest(url_1) {
     return __awaiter(this, arguments, void 0, function* (url, method = 'GET', body = null) {
-        if (!authToken) {
+        if (!authUser) {
             throw new Error("Неавторизованный запрос, токен не найден");
         }
         try {
@@ -851,7 +898,7 @@ function sendRequest(url_1) {
                 method: method,
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authToken}`
+                    "Authorization": `Bearer ${authUser.token}`
                 },
                 body: body ? JSON.stringify(body) : null
             });
@@ -861,27 +908,27 @@ function sendRequest(url_1) {
                     yield logout();
                     return null;
                 }
-                console.error(`Ошибка: ${response.statusText}`);
+                toastError(`Ошибка: ${response.statusText}`);
+                console.error(`Ошибка:`, response);
                 return null;
             }
             return response.json();
         }
         catch (error) {
+            toastError(`"Неизвестная ошибка`);
             console.error("Неизвестная ошибка:", error);
-            return null;
         }
+        return null;
     });
 }
 function setToken(token) {
-    const tokenData = parseJWT(token);
     localStorage.setItem('token', token);
-    localStorage.setItem('user', tokenData.username);
+}
+function removeToken() {
+    localStorage.removeItem('token');
 }
 function getToken() {
     return localStorage.getItem('token');
-}
-function getUser() {
-    return localStorage.getItem('user');
 }
 function parseJWT(token) {
     const parts = token.split('.');

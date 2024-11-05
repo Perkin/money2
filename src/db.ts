@@ -20,11 +20,13 @@ interface Payment {
 }
 
 type InvestFilter = {
-    filterOnlyActive?: number
+    filterOnlyActive?: number,
+    updatedAt?: Date
 }
 
 type PaymentFilter = {
-    id?: number
+    id?: number,
+    updatedAt?: Date
 }
 
 type dbResult = number | string | undefined;
@@ -74,14 +76,18 @@ async function dbGetInvestById(investId: number): Promise<Invest> {
 }
 
 async function dbGetInvests(filter: InvestFilter = {}): Promise<Invest[]> {
-    let filterOnlyActive = filter.filterOnlyActive;
-
     let transaction = db.transaction("invests");
     let invests = transaction.objectStore("invests");
 
-    if (filterOnlyActive == 1) {
+    if (filter.filterOnlyActive) {
         let showAllIndex = invests.index('isActiveIdx');
+
         return dbDoAsync(() => showAllIndex.getAll(1));
+    } else if (filter.updatedAt) {
+        let updatedAtIndex = invests.index('updatedAtIdx');
+        let range = IDBKeyRange.lowerBound(filter.updatedAt);
+
+        return dbDoAsync(() => updatedAtIndex.getAll(range));
     } else {
         return dbDoAsync (() => invests.getAll());
     }
@@ -149,10 +155,15 @@ async function dbGetPayments(filter: PaymentFilter = {}): Promise<Payment[]> {
     let transaction = db.transaction("payments");
     let payments = transaction.objectStore("payments");
 
-    let investId = filter.id;
-    if (investId != undefined) {
+    if (filter.id) {
         let investIndex = payments.index('investIdIdx');
-        return dbDoAsync(() => investIndex.getAll(investId!));
+
+        return dbDoAsync(() => investIndex.getAll(filter.id));
+    } else if (filter.updatedAt) {
+        let updatedAtIndex = payments.index('updatedAtIdx');
+        let range = IDBKeyRange.lowerBound(filter.updatedAt);
+
+        return dbDoAsync(() => updatedAtIndex.getAll(range));
     } else {
         return dbDoAsync (() => payments.getAll());
     }
@@ -200,10 +211,10 @@ async function dbImportData(importData: any): Promise<void> {
 
     // Export converts date to string, so we should cast them back to Date
     for (const invest of importData.invests) {
-        invest.createdDate = new Date(Date.parse(invest.createdDate));
-        invest.updatedAt = new Date(Date.parse(invest.updatedAt));
+        invest.createdDate = new Date(invest.createdDate);
+        invest.updatedAt = new Date(invest.updatedAt);
         if (!invest.isActive && invest.closedDate) {
-            invest.closedDate = new Date(Date.parse(invest.closedDate));
+            invest.closedDate = new Date(invest.closedDate);
         }
         await dbDoAsync(() => invests.put(invest));
     }
@@ -212,8 +223,8 @@ async function dbImportData(importData: any): Promise<void> {
     await dbDoAsync (() => payments.clear());
 
     for (const payment of importData.payments) {
-        payment.paymentDate = new Date(Date.parse(payment.paymentDate));
-        payment.updatedAt = new Date(Date.parse(payment.updatedAt));
+        payment.paymentDate = new Date(payment.paymentDate);
+        payment.updatedAt = new Date(payment.updatedAt);
         await dbDoAsync(() => payments.put(payment));
     }
 }

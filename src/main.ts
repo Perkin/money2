@@ -3,11 +3,15 @@ declare function Toastify(options: any): any;
 
 const api_url: string = 'https://money-7won.onrender.com/api';
 
-let authToken: string | null;
-let authUser: string | null;
-
 let db: IDBDatabase;
 let dbVersion = 4;
+
+type User = {
+    token: string;
+    username: string;
+};
+
+let authUser: User | null;
 
 interface TotalItem {
     title: string,
@@ -55,12 +59,13 @@ openRequest.onsuccess = function() {
 }
 
 async function main(): Promise<void> {
+    await dbCalculatePayments();
+    await updatePayments();
+
     await initMenu();
     await initRegisterPopup();
     await initAuthPopup();
     await initAuth();
-    await dbCalculatePayments();
-    await updatePayments();
 }
 
 async function initMenu(): Promise<void> {
@@ -121,34 +126,37 @@ async function initAuthPopup(): Promise<void> {
 }
 
 async function initAuth(): Promise<void> {
-    authToken = getToken();
-    if (!authToken) {
+    const token = getToken();
+    if (!token) {
         return;
     }
-    authUser = getUser();
-    if (!authUser) {
-        return;
-    }
+
+    const tokenData = parseJWT(token);
+
+    authUser = {
+        token: token,
+        username: tokenData.username
+    };
 
     (document.getElementById('logout') as HTMLElement).style.display = 'inline-block';
     (document.getElementById('open-login-popup') as HTMLElement).style.display = 'none';
     (document.getElementById('open-register-popup') as HTMLElement).style.display = 'none';
 
-    (document.getElementById('user') as HTMLElement).innerText = authUser;
+    (document.getElementById('user') as HTMLElement).innerText = authUser.username;
+
+    await syncUpdates();
 }
 
 // Функция для выхода
 async function logout(): Promise<void> {
     authUser = null;
-    authToken = null;
+    removeToken();
 
     (document.getElementById('logout') as HTMLElement).style.display = 'none';
     (document.getElementById('open-login-popup') as HTMLElement).style.display = 'inline-block';
     (document.getElementById('open-register-popup') as HTMLElement).style.display = 'inline-block';
 
     (document.getElementById('user') as HTMLElement).innerText = '';
-
-    localStorage.clear();
 
     const dropdownContent = (document.getElementById('menu-dropdown-content') as HTMLElement);
     dropdownContent.classList.remove('show');
@@ -497,7 +505,7 @@ async function addInvest(e: Event): Promise<void> {
 
     let money = parseFloat(moneyValue);
     let incomeRatio = parseFloat(incomeRatioValue);
-    let createdDate = new Date(Date.parse(createdDateValue));
+    let createdDate = new Date(createdDateValue);
 
     let now = new Date();
     createdDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
@@ -741,8 +749,50 @@ async function userLogin(event: SubmitEvent): Promise<void> {
     }
 }
 
+async function syncUpdates(): Promise<void> {
+    const lastSyncDate = localStorage.getItem('lastSyncDate');
+
+    const result = await sendRequest(`/updates?since=${lastSyncDate}`);
+    if (result && result.status == 'success' && result.updates) {
+        await updateLocalData(result.updates);
+    } else {
+        await updateRemoteDate(lastSyncDate);
+    }
+}
+
+async function updateLocalData(updates: any): Promise<void> {
+    console.log(updates);
+
+    localStorage.setItem('lastSyncDate', new Date().toISOString());
+}
+
+async function updateRemoteDate(lastSyncDate: string | null): Promise<void> {
+    let investFilter : InvestFilter = {};
+    let paymentFilter : PaymentFilter = {};
+
+    if (lastSyncDate) {
+        investFilter = {updatedAt: new Date(lastSyncDate)};
+        paymentFilter = {updatedAt: new Date(lastSyncDate)};
+    }
+
+    const invests = await dbGetInvests(investFilter);
+    const payments = await dbGetPayments(paymentFilter);
+
+    if (!invests && !payments) {
+        return;
+    }
+
+    const exportString = JSON.stringify({invests: invests, payments: payments});
+
+    const result = await sendRequest('/update', 'POST', exportString);
+    if (result && result.status == 'success') {
+        localStorage.setItem('lastSyncDate', new Date().toISOString());
+        toast('Новые данные успешно отправлены на сервер');
+    }
+}
+
 async function sendRequest(url: string, method: string = 'GET', body: any = null): Promise<any> {
-    if (!authToken) {
+    if (!authUser) {
         throw new Error("Неавторизованный запрос, токен не найден");
     }
 
@@ -751,7 +801,7 @@ async function sendRequest(url: string, method: string = 'GET', body: any = null
             method: method,
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${authToken}`
+                "Authorization": `Bearer ${authUser.token}`
             },
             body: body ? JSON.stringify(body) : null
         });
@@ -762,30 +812,30 @@ async function sendRequest(url: string, method: string = 'GET', body: any = null
                 await logout();
                 return null;
             }
-            console.error(`Ошибка: ${response.statusText}`);
+            toastError(`Ошибка: ${response.statusText}`);
+            console.error(`Ошибка:`, response);
             return null;
         }
 
         return response.json();
-    } catch (error) {
+    } catch (error: unknown) {
+        toastError(`"Неизвестная ошибка`);
         console.error("Неизвестная ошибка:", error);
-        return null;
     }
+
+    return null;
 }
 
 function setToken(token: string ): void {
-    const tokenData = parseJWT(token);
-
     localStorage.setItem('token', token);
-    localStorage.setItem('user', tokenData.username);
+}
+
+function removeToken(): void {
+    localStorage.removeItem('token');
 }
 
 function getToken(): string|null {
     return localStorage.getItem('token');
-}
-
-function getUser(): string|null {
-    return localStorage.getItem('user');
 }
 
 function parseJWT(token: string): any {
