@@ -53,11 +53,11 @@ function dbGetInvests() {
     return __awaiter(this, arguments, void 0, function* (filter = {}) {
         let transaction = db.transaction("invests");
         let invests = transaction.objectStore("invests");
-        if (filter.filterOnlyActive) {
+        if (filter.filterOnlyActive == 1) {
             let showAllIndex = invests.index('isActiveIdx');
             return dbDoAsync(() => showAllIndex.getAll(1));
         }
-        else if (filter.updatedAt) {
+        else if (filter.updatedAt != undefined) {
             let updatedAtIndex = invests.index('updatedAtIdx');
             let range = IDBKeyRange.lowerBound(filter.updatedAt);
             return dbDoAsync(() => updatedAtIndex.getAll(range));
@@ -122,11 +122,11 @@ function dbGetPayments() {
     return __awaiter(this, arguments, void 0, function* (filter = {}) {
         let transaction = db.transaction("payments");
         let payments = transaction.objectStore("payments");
-        if (filter.id) {
+        if (filter.id != undefined) {
             let investIndex = payments.index('investIdIdx');
             return dbDoAsync(() => investIndex.getAll(filter.id));
         }
-        else if (filter.updatedAt) {
+        else if (filter.updatedAt != undefined) {
             let updatedAtIndex = payments.index('updatedAtIdx');
             let range = IDBKeyRange.lowerBound(filter.updatedAt);
             return dbDoAsync(() => updatedAtIndex.getAll(range));
@@ -877,11 +877,11 @@ function updateRemoteDate(lastSyncDate) {
         }
         const invests = yield dbGetInvests(investFilter);
         const payments = yield dbGetPayments(paymentFilter);
-        if (!invests && !payments) {
+        if (!invests.length && !payments.length) {
             return;
         }
-        const exportString = JSON.stringify({ invests: invests, payments: payments });
-        const result = yield sendRequest('/update', 'POST', exportString);
+        const exportJson = { invests: invests, payments: payments };
+        const result = yield sendRequest('/update', 'POST', exportJson);
         if (result && result.status == 'success') {
             localStorage.setItem('lastSyncDate', new Date().toISOString());
             toast('Новые данные успешно отправлены на сервер');
@@ -889,7 +889,7 @@ function updateRemoteDate(lastSyncDate) {
     });
 }
 function sendRequest(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, method = 'GET', body = null) {
+    return __awaiter(this, arguments, void 0, function* (url, method = 'GET', json = null) {
         if (!authUser) {
             throw new Error("Неавторизованный запрос, токен не найден");
         }
@@ -900,7 +900,7 @@ function sendRequest(url_1) {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${authUser.token}`
                 },
-                body: body ? JSON.stringify(body) : null
+                body: json ? JSON.stringify(json) : null
             });
             if (!response.ok) {
                 if (response.status == 401) {

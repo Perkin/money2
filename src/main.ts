@@ -778,20 +778,20 @@ async function updateRemoteDate(lastSyncDate: string | null): Promise<void> {
     const invests = await dbGetInvests(investFilter);
     const payments = await dbGetPayments(paymentFilter);
 
-    if (!invests && !payments) {
+    if (!invests.length && !payments.length ) {
         return;
     }
 
-    const exportString = JSON.stringify({invests: invests, payments: payments});
+    const exportJson = {invests: invests, payments: payments};
 
-    const result = await sendRequest('/update', 'POST', exportString);
+    const result = await sendRequest('/update', 'POST', exportJson);
     if (result && result.status == 'success') {
         localStorage.setItem('lastSyncDate', new Date().toISOString());
         toast('Новые данные успешно отправлены на сервер');
     }
 }
 
-async function sendRequest(url: string, method: string = 'GET', body: any = null): Promise<any> {
+async function sendRequest(url: string, method: string = 'GET', json: any = null): Promise<any> {
     if (!authUser) {
         throw new Error("Неавторизованный запрос, токен не найден");
     }
@@ -803,7 +803,7 @@ async function sendRequest(url: string, method: string = 'GET', body: any = null
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${authUser.token}`
             },
-            body: body ? JSON.stringify(body) : null
+            body: json ? JSON.stringify(json) : null
         });
 
         if (!response.ok) {

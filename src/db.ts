@@ -79,11 +79,11 @@ async function dbGetInvests(filter: InvestFilter = {}): Promise<Invest[]> {
     let transaction = db.transaction("invests");
     let invests = transaction.objectStore("invests");
 
-    if (filter.filterOnlyActive) {
+    if (filter.filterOnlyActive == 1) {
         let showAllIndex = invests.index('isActiveIdx');
 
         return dbDoAsync(() => showAllIndex.getAll(1));
-    } else if (filter.updatedAt) {
+    } else if (filter.updatedAt != undefined) {
         let updatedAtIndex = invests.index('updatedAtIdx');
         let range = IDBKeyRange.lowerBound(filter.updatedAt);
 
@@ -155,11 +155,11 @@ async function dbGetPayments(filter: PaymentFilter = {}): Promise<Payment[]> {
     let transaction = db.transaction("payments");
     let payments = transaction.objectStore("payments");
 
-    if (filter.id) {
+    if (filter.id != undefined) {
         let investIndex = payments.index('investIdIdx');
 
         return dbDoAsync(() => investIndex.getAll(filter.id));
-    } else if (filter.updatedAt) {
+    } else if (filter.updatedAt != undefined) {
         let updatedAtIndex = payments.index('updatedAtIdx');
         let range = IDBKeyRange.lowerBound(filter.updatedAt);
 
