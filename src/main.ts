@@ -31,6 +31,14 @@ interface DebtItem {
 //     console.log(deleteRequest);
 // }
 
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/money2/service-worker.js').then(registration => {
+        console.log('Service Worker зарегистрирован с областью:', registration.scope);
+    }).catch(error => {
+        console.error('Ошибка регистрации Service Worker:', error);
+    });
+}
+
 let openRequest = indexedDB.open('money', dbVersion);
 
 openRequest.onupgradeneeded = function (event) {
