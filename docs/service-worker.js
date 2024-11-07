@@ -12,7 +12,9 @@ const CACHE_ASSETS = [
     '/money2/icon-512x512.png',
     '/money2/apple-touch-icon.png',
     '/money2/favicon-16x16.png',
-    '/money2/favicon-32x32.png'
+    '/money2/favicon-32x32.png',
+    '/money2/screenshot-mobile.png',
+    '/money2/screenshot-wide.png'
 ];
 
 // Устанавливаем кэш
