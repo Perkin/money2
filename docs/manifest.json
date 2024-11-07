@@ -1,7 +1,7 @@
 {
     "name": "Money debt manager",
     "short_name": "Money",
-    "start_url": "/docs",
+    "start_url": "/money2/",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#000000",
