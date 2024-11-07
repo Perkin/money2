@@ -3,6 +3,16 @@
     --item-width: calc(var(--container-width) / 4 + 10px);
 }
 
+@media (max-width: 600px) {
+    :root {
+        --container-width: 90vw;
+    }
+
+    body {
+        margin: 5px;
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
