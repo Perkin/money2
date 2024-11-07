@@ -862,12 +862,12 @@ function syncUpdates() {
         else {
             yield updateRemoteData();
         }
+        localStorage.setItem('lastSyncDate', new Date().toISOString());
     });
 }
 function updateLocalData(result) {
     return __awaiter(this, void 0, void 0, function* () {
         yield dbImportData(result);
-        localStorage.setItem('lastSyncDate', new Date().toISOString());
         toast('Новые данные загружены');
         setTimeout(() => document.location.reload(), 1000);
     });
@@ -889,7 +889,6 @@ function updateRemoteData() {
         const exportJson = { invests: invests, payments: payments };
         const result = yield sendRequest('/update', 'POST', exportJson);
         if (result && result.status == 'success') {
-            localStorage.setItem('lastSyncDate', new Date().toISOString());
             toast('Новые данные успешно отправлены на сервер');
         }
     });
