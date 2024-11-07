@@ -1,5 +1,5 @@
 // Имя кэша, чтобы различать версии
-const CACHE_NAME = 'money2-cache-v1';
+const CACHE_NAME = 'money2-cache-v2';
 
 // Файлы, которые будут кэшироваться
 const CACHE_ASSETS = [
@@ -12,7 +12,13 @@ const CACHE_ASSETS = [
     '/money2/icon-512x512.png',
     '/money2/apple-touch-icon.png',
     '/money2/favicon-16x16.png',
-    '/money2/favicon-32x32.png'
+    '/money2/favicon-32x32.png',
+    'https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css',
+    'https://cdn.jsdelivr.net/npm/toastify-js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js',
+    'https://cdn.jsdelivr.net/npm/hammerjs',
+    'https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom'
 ];
 
 // Устанавливаем кэш
