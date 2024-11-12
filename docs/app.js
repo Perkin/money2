@@ -207,7 +207,7 @@ function dbDoAsync(callback) {
         });
     });
 }
-const api_url = 'https://perkin.alwaysdata.net/api/';
+const api_url = 'https://perkin.alwaysdata.net/api';
 let db;
 let dbVersion = 4;
 let authUser;

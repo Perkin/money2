@@ -1,11 +1,11 @@
 // Имя кэша, чтобы различать версии
-const CACHE_NAME = 'money2-cache-v2';
+const CACHE_NAME = 'money2-cache-v3';
 
 // Файлы, которые будут кэшироваться
 const CACHE_ASSETS = [
     '/money2/',
     '/money2/index.html',
-    '/money2/styles.css',
+    '/money2/style.css',
     '/money2/app.js',
     '/money2/favicon.ico',
     '/money2/icon-192x192.png',
