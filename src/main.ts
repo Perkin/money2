@@ -766,6 +766,9 @@ async function syncUpdates(): Promise<void> {
     if (result && result.status == 'success') {
         await updateLocalData(result);
     } else {
+        if (result.status == 'no_updates') {
+            toast('Обновлений нет');
+        }
         await updateRemoteData();
     }
 

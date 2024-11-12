@@ -867,6 +867,9 @@ function syncUpdates() {
             yield updateLocalData(result);
         }
         else {
+            if (result.status == 'no_updates') {
+                toast('Обновлений нет');
+            }
             yield updateRemoteData();
         }
         localStorage.setItem('lastSyncDate', new Date().toISOString());
