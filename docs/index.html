@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="style.css?v=1.8"/>
+	<link rel="stylesheet" href="style.css?v=1.9"/>
 	<link rel="icon" href="favicon.ico"/>
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -13,7 +13,7 @@
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/hammerjs"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-	<script defer type="text/javascript" src="app.js?v=1.8"></script>
+	<script defer type="text/javascript" src="app.js?v=1.9"></script>
 </head>
 <body>
 	<div id="chart-container">
@@ -25,7 +25,10 @@
 			<span id="close-register-popup" class="popup-close">&times;</span>
 			<h2>Регистрация</h2>
 			<form id="register-form" class="popup-form">
-				<label for="register-username">Логин:</label>
+				<label for="register-email">Email:</label>
+				<input type="text" id="register-email" name="email" required>
+
+				<label for="register-username">Отображаемое имя:</label>
 				<input type="text" id="register-username" name="username" required>
 
 				<label for="register-password">Пароль:</label>
@@ -47,8 +50,8 @@
 			<span id="close-login-popup" class="popup-close">&times;</span>
 			<h2>Авторизация</h2>
 			<form id="login-form" class="popup-form">
-				<label for="login-username">Логин:</label>
-				<input type="text" id="login-username" name="username" required>
+				<label for="login-email">Email:</label>
+				<input type="text" id="login-email" name="email" required>
 
 				<label for="login-password">Пароль:</label>
 				<input type="password" id="login-password" name="password" required>

@@ -9,6 +9,7 @@ let dbVersion = 4;
 type User = {
     token: string;
     username: string;
+    email: string;
 };
 
 let authUser: User | null;
@@ -143,7 +144,8 @@ async function initAuth(): Promise<void> {
 
     authUser = {
         token: token,
-        username: tokenData.username
+        username: tokenData.username,
+        email: tokenData.email
     };
 
     (document.getElementById('logout') as HTMLElement).style.display = 'inline-block';
@@ -613,6 +615,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
     const username = (document.getElementById("register-username") as HTMLInputElement).value.trim();
+    const email    = (document.getElementById("register-email") as HTMLInputElement).value.trim();
     const password = (document.getElementById("register-password") as HTMLInputElement).value.trim();
     const confirmPassword = (document.getElementById("register-confirm-password") as HTMLInputElement).value.trim();
 
@@ -638,7 +641,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, email, password })
         });
 
         const result = await response.json();
@@ -660,7 +663,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
                     errorItem.className = 'error-item';
                     errorItem.innerHTML = 'Пользователь уже существует';
 
-                    (document.getElementById("register-username") as HTMLElement).after(errorItem);
+                    (document.getElementById("register-email") as HTMLElement).after(errorItem);
                     break;
                 case 'validation_errors':
                     let errors = result.errors || {};
@@ -690,7 +693,7 @@ async function userRegister(event: SubmitEvent): Promise<void> {
 async function userLogin(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
-    const username = (document.getElementById("login-username") as HTMLInputElement).value.trim();
+    const email = (document.getElementById("login-email") as HTMLInputElement).value.trim();
     const password = (document.getElementById("login-password") as HTMLInputElement).value.trim();
 
     const button = (document.getElementById("login-button") as HTMLInputElement);
@@ -710,7 +713,7 @@ async function userLogin(event: SubmitEvent): Promise<void> {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ email, password })
         });
 
         const result = await response.json();
@@ -766,7 +769,7 @@ async function syncUpdates(): Promise<void> {
     if (result && result.status == 'success') {
         await updateLocalData(result);
     } else {
-        if (result.status == 'no_updates') {
+        if (result && result.status == 'no_updates') {
             toast('Обновлений нет');
         }
         await updateRemoteData();

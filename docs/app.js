@@ -315,7 +315,8 @@ function initAuth() {
         const tokenData = parseJWT(token);
         authUser = {
             token: token,
-            username: tokenData.username
+            username: tokenData.username,
+            email: tokenData.email
         };
         document.getElementById('logout').style.display = 'inline-block';
         document.getElementById('open-login-popup').style.display = 'none';
@@ -728,6 +729,7 @@ function userRegister(event) {
     return __awaiter(this, void 0, void 0, function* () {
         event.preventDefault();
         const username = document.getElementById("register-username").value.trim();
+        const email = document.getElementById("register-email").value.trim();
         const password = document.getElementById("register-password").value.trim();
         const confirmPassword = document.getElementById("register-confirm-password").value.trim();
         if (password !== confirmPassword) {
@@ -748,7 +750,7 @@ function userRegister(event) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, email, password })
             });
             const result = yield response.json();
             if (result.status == 'success') {
@@ -767,7 +769,7 @@ function userRegister(event) {
                         let errorItem = document.createElement('div');
                         errorItem.className = 'error-item';
                         errorItem.innerHTML = 'Пользователь уже существует';
-                        document.getElementById("register-username").after(errorItem);
+                        document.getElementById("register-email").after(errorItem);
                         break;
                     case 'validation_errors':
                         let errors = result.errors || {};
@@ -797,7 +799,7 @@ function userRegister(event) {
 function userLogin(event) {
     return __awaiter(this, void 0, void 0, function* () {
         event.preventDefault();
-        const username = document.getElementById("login-username").value.trim();
+        const email = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value.trim();
         const button = document.getElementById("login-button");
         const spinner = document.getElementById("login-spinner");
@@ -813,7 +815,7 @@ function userLogin(event) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ email, password })
             });
             const result = yield response.json();
             if (result.status == 'success') {
@@ -867,7 +869,7 @@ function syncUpdates() {
             yield updateLocalData(result);
         }
         else {
-            if (result.status == 'no_updates') {
+            if (result && result.status == 'no_updates') {
                 toast('Обновлений нет');
             }
             yield updateRemoteData();
