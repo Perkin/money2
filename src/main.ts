@@ -1,7 +1,7 @@
 declare var Chart: any;
 declare function Toastify(options: any): any;
 
-const api_url: string = 'https://perkin.alwaysdata.net/api';
+const api_url: string = 'https://money-7won.onrender.com/api';
 
 let db: IDBDatabase;
 let dbVersion = 4;
