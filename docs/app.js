@@ -207,7 +207,7 @@ function dbDoAsync(callback) {
         });
     });
 }
-const api_url = 'https://money-production-3c4a.up.railway.app/api';
+const api_url = 'https://perkin.helioho.st/api';
 let db;
 let dbVersion = 4;
 let authUser;

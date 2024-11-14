@@ -1,7 +1,7 @@
 declare var Chart: any;
 declare function Toastify(options: any): any;
 
-const api_url: string = 'https://money-production-3c4a.up.railway.app/api';
+const api_url: string = 'https://perkin.helioho.st/api';
 
 let db: IDBDatabase;
 let dbVersion = 4;
