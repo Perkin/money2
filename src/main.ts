@@ -106,12 +106,6 @@ async function initRegisterPopup(): Promise<void> {
     closePopupButton.addEventListener('click', () => {
         registerPopup.classList.remove('show');
     });
-
-    document.addEventListener('click', (event: MouseEvent) => {
-        if (event.target === registerPopup) {
-            registerPopup.classList.remove('show');
-        }
-    });
 }
 
 async function initAuthPopup(): Promise<void> {
@@ -125,12 +119,6 @@ async function initAuthPopup(): Promise<void> {
 
     closePopupButton.addEventListener('click', () => {
         loginPopup.classList.remove('show');
-    });
-
-    document.addEventListener('click', (event: MouseEvent) => {
-        if (event.target === loginPopup) {
-            loginPopup.classList.remove('show');
-        }
     });
 }
 
@@ -765,7 +753,10 @@ async function userLogin(event: SubmitEvent): Promise<void> {
 async function syncUpdates(): Promise<void> {
     const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
 
+    const toastSyncUpdates = toast('Получаю обновления...', -1);
     const result = await sendRequest(`/updates?since=${lastSyncDate}`);
+    toastSyncUpdates.hideToast();
+
     if (result && result.status == 'success') {
         await updateLocalData(result);
     } else {
@@ -804,7 +795,10 @@ async function updateRemoteData(): Promise<void> {
     }
     const exportJson = {invests: invests, payments: payments};
 
+    const toastUpdateRemoteData = toast('Отправляю данные...', -1);
     const result = await sendRequest('/update', 'POST', exportJson);
+    toastUpdateRemoteData.hideToast();
+
     if (result && result.status == 'success') {
         toast('Новые данные успешно отправлены на сервер');
     }
@@ -897,27 +891,29 @@ function formatMoney(money: number): string {
     return moneyFormatter.format(money);
 }
 
-function toast(text: string, duration: number = 3000): void {
-    Toastify({
+function toast(text: string, duration: number = 3000, props: object = {}): any {
+    return Toastify({
         text: text,
         duration: duration,
         gravity: "top",
         position: "center",
         style: {
             background: '#4CAF50',
-        }
+        },
+        ...props
     }).showToast();
 }
 
-function toastError(text: string | number | undefined, duration: number = 3000): void {
-    Toastify({
+function toastError(text: string | number | undefined, duration: number = 3000, props: object = {}): any {
+    return Toastify({
         text: text || 'Неизвестная ошибка',
         duration: duration,
         gravity: "top",
         position: "center",
         style: {
             background: '#AF4C50',
-        }
+        },
+        ...props
     }).showToast();
 }
 

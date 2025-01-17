@@ -5,7 +5,7 @@
 
 @media (max-width: 600px) {
     :root {
-        --container-width: 90vw;
+        --container-width: 95vw;
     }
 
     body {
@@ -23,7 +23,7 @@ body {
     background-color: #000;
     color: #fff;
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 10px 0;
 }
 
 input, button {

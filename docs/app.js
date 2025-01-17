@@ -281,11 +281,6 @@ function initRegisterPopup() {
         closePopupButton.addEventListener('click', () => {
             registerPopup.classList.remove('show');
         });
-        document.addEventListener('click', (event) => {
-            if (event.target === registerPopup) {
-                registerPopup.classList.remove('show');
-            }
-        });
     });
 }
 function initAuthPopup() {
@@ -298,11 +293,6 @@ function initAuthPopup() {
         });
         closePopupButton.addEventListener('click', () => {
             loginPopup.classList.remove('show');
-        });
-        document.addEventListener('click', (event) => {
-            if (event.target === loginPopup) {
-                loginPopup.classList.remove('show');
-            }
         });
     });
 }
@@ -864,7 +854,9 @@ function userLogin(event) {
 function syncUpdates() {
     return __awaiter(this, void 0, void 0, function* () {
         const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
+        const toastSyncUpdates = toast('Получаю обновления...', -1);
         const result = yield sendRequest(`/updates?since=${lastSyncDate}`);
+        toastSyncUpdates.hideToast();
         if (result && result.status == 'success') {
             yield updateLocalData(result);
         }
@@ -899,7 +891,9 @@ function updateRemoteData() {
             return;
         }
         const exportJson = { invests: invests, payments: payments };
+        const toastUpdateRemoteData = toast('Отправляю данные...', -1);
         const result = yield sendRequest('/update', 'POST', exportJson);
+        toastUpdateRemoteData.hideToast();
         if (result && result.status == 'success') {
             toast('Новые данные успешно отправлены на сервер');
         }
@@ -979,27 +973,15 @@ let moneyFormatter = new Intl.NumberFormat('default', {
 function formatMoney(money) {
     return moneyFormatter.format(money);
 }
-function toast(text, duration = 3000) {
-    Toastify({
-        text: text,
-        duration: duration,
-        gravity: "top",
-        position: "center",
-        style: {
+function toast(text, duration = 3000, props = {}) {
+    return Toastify(Object.assign({ text: text, duration: duration, gravity: "top", position: "center", style: {
             background: '#4CAF50',
-        }
-    }).showToast();
+        } }, props)).showToast();
 }
-function toastError(text, duration = 3000) {
-    Toastify({
-        text: text || 'Неизвестная ошибка',
-        duration: duration,
-        gravity: "top",
-        position: "center",
-        style: {
+function toastError(text, duration = 3000, props = {}) {
+    return Toastify(Object.assign({ text: text || 'Неизвестная ошибка', duration: duration, gravity: "top", position: "center", style: {
             background: '#AF4C50',
-        }
-    }).showToast();
+        } }, props)).showToast();
 }
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('filter-show-all').addEventListener("click", updatePayments);
