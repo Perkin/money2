@@ -207,7 +207,7 @@ function dbDoAsync(callback) {
         });
     });
 }
-const api_url = 'https://perkin.helioho.st/api';
+const api_url = 'https://perkin.alwaysdata.net/money/api';
 let db;
 let dbVersion = 4;
 let authUser;
