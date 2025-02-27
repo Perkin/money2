@@ -93,13 +93,6 @@ h1 {
     background-color: #45a049;
 }
 
-.add-invest-form .button-row #invest-export,
-.add-invest-form .button-row #invest-import {
-    background-color: #AF4C50;
-    float: right;
-    margin-left: 5px;
-}
-
 .data-filter {
     clear: both;
     overflow: auto;

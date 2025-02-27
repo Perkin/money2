@@ -599,6 +599,13 @@ async function importData(): Promise<void> {
     }
 }
 
+async function forceUpdateData(): Promise<void> {
+    localStorage.removeItem('lastSyncDate');
+    await dbImportData({invests: [], payments: []}, true);
+    toast('Данные сброшены');
+    setTimeout(() => document.location.reload(), 1000);
+}
+
 async function userRegister(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
@@ -925,6 +932,7 @@ document.addEventListener("DOMContentLoaded", () => {
     (document.getElementById('close-chart') as HTMLButtonElement).addEventListener("click", closeChart);
     (document.getElementById('invest-export') as HTMLButtonElement).addEventListener('click', exportData);
     (document.getElementById('invest-import') as HTMLButtonElement).addEventListener('click', importData);
+    (document.getElementById('invest-force-update') as HTMLButtonElement).addEventListener('click', forceUpdateData);
     (document.getElementById('logout') as HTMLButtonElement).addEventListener('click', logout);
     (document.getElementById('register-form') as HTMLFormElement).addEventListener('submit', userRegister);
     (document.getElementById('login-form') as HTMLFormElement).addEventListener('submit', userLogin);

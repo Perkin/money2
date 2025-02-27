@@ -715,6 +715,14 @@ function importData() {
         }
     });
 }
+function forceUpdateData() {
+    return __awaiter(this, void 0, void 0, function* () {
+        localStorage.removeItem('lastSyncDate');
+        yield dbImportData({ invests: [], payments: [] }, true);
+        toast('Данные сброшены');
+        setTimeout(() => document.location.reload(), 1000);
+    });
+}
 function userRegister(event) {
     return __awaiter(this, void 0, void 0, function* () {
         event.preventDefault();
@@ -991,6 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('close-chart').addEventListener("click", closeChart);
     document.getElementById('invest-export').addEventListener('click', exportData);
     document.getElementById('invest-import').addEventListener('click', importData);
+    document.getElementById('invest-force-update').addEventListener('click', forceUpdateData);
     document.getElementById('logout').addEventListener('click', logout);
     document.getElementById('register-form').addEventListener('submit', userRegister);
     document.getElementById('login-form').addEventListener('submit', userLogin);
