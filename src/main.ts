@@ -751,7 +751,7 @@ async function userLogin(event: SubmitEvent): Promise<void> {
 }
 
 async function syncUpdates(): Promise<void> {
-    const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
+    const lastSyncDate =  '';
 
     const toastSyncUpdates = toast('Получаю обновления...', -1);
     const result = await sendRequest(`/updates?since=${lastSyncDate}`);
@@ -770,7 +770,7 @@ async function syncUpdates(): Promise<void> {
 }
 
 async function updateLocalData(result: any): Promise<void> {
-    await dbImportData(result, true);
+    await dbImportData(result);
 
     toast('Новые данные загружены');
     setTimeout(() => document.location.reload(), 1000);
