@@ -770,7 +770,7 @@ async function syncUpdates(): Promise<void> {
 }
 
 async function updateLocalData(result: any): Promise<void> {
-    await dbImportData(result);
+    await dbImportData(result, true);
 
     toast('Новые данные загружены');
     setTimeout(() => document.location.reload(), 1000);
