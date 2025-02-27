@@ -751,7 +751,7 @@ async function userLogin(event: SubmitEvent): Promise<void> {
 }
 
 async function syncUpdates(): Promise<void> {
-    const lastSyncDate =  '';
+    const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
 
     const toastSyncUpdates = toast('Получаю обновления...', -1);
     const result = await sendRequest(`/updates?since=${lastSyncDate}`);

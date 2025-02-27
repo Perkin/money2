@@ -853,7 +853,7 @@ function userLogin(event) {
 }
 function syncUpdates() {
     return __awaiter(this, void 0, void 0, function* () {
-        const lastSyncDate = '';
+        const lastSyncDate = localStorage.getItem('lastSyncDate') || '';
         const toastSyncUpdates = toast('Получаю обновления...', -1);
         const result = yield sendRequest(`/updates?since=${lastSyncDate}`);
         toastSyncUpdates.hideToast();
