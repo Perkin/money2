@@ -1,5 +1,5 @@
 // Имя кэша, чтобы различать версии
-const CACHE_NAME = 'money2-cache-v7';
+const CACHE_NAME = 'money2-cache-v8';
 
 // Файлы, которые будут кэшироваться
 const CACHE_ASSETS = [
