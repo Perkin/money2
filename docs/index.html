@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="style.css?v=1.11"/>
+	<link rel="stylesheet" href="style.css?v=1.12"/>
 	<link rel="icon" href="favicon.ico"/>
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -13,7 +13,7 @@
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/hammerjs"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-	<script defer type="text/javascript" src="app.js?v=1.11"></script>
+	<script defer type="text/javascript" src="app.js?v=1.12"></script>
 </head>
 <body>
 	<div id="chart-container">
@@ -83,7 +83,10 @@
 		<form class="add-invest-form" id="add-invest-form">
 			<div class="money-row">
 				<input type="text" placeholder="Сколько инвестируем" id="add-invest-money">
-				<input type="text" placeholder="Доля прибыли" id="add-invest-income-ratio" value="0.05">
+				<select id="add-invest-income-ratio">
+					<option value="0.025">2.5%</option>
+					<option value="0.05">5%</option>
+				</select>
 			</div>
 			<div class="date-row">
 				<input type="date" placeholder="Дата инвестиции" id="add-invest-date">
